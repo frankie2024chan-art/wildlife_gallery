@@ -1,0 +1,394 @@
+---
+// 1. 数据配置（同一地点包含多个物种会自动在地图弹窗中合并）
+const animals = [
+  {
+    name: "普通翠鸟",
+    latinName: "Alcedo atthis",
+    location: "四川成都锦江区",
+    category: "bird",
+    coords: [30.65, 104.06],
+    exif: "Sony A7R5 | 600mm | f/4 | 1/2000s | ISO 800",
+    image: "/images/kingfisher.jpg",
+    desc: "清晨在岸边捕食小鱼的翠鸟，羽毛呈金属般的绚丽蓝色。"
+  },
+  {
+    name: "白鹭",
+    latinName: "Egretta garzetta",
+    location: "四川成都锦江区", // 与翠鸟相同坐标，地图会自动分组展示
+    category: "bird",
+    coords: [30.65, 104.06],
+    exif: "Sony A7R5 | 400mm | f/5.6 | 1/1600s | ISO 400",
+    image: "/images/egret.jpg",
+    desc: "水边静立等候猎物的白鹭，姿态优美。"
+  },
+  {
+    name: "大熊猫",
+    latinName: "Ailuropoda melanoleuca",
+    location: "四川卧龙自然保护区",
+    category: "mammal",
+    coords: [30.98, 103.14],
+    exif: "Canon R5 | 400mm | f/2.8 | 1/1000s | ISO 400",
+    image: "/images/panda.jpg",
+    desc: "竹林间偶遇正在享用早餐的大熊猫，憨态可掬。"
+  }
+];
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>野生动物观察图鉴与足迹</title>
+    <!-- 使用国内字节跳动 Staticfile 镜像 CDN -->
+    <link rel="stylesheet" href="https://cdn.staticfile.net/leaflet/1.9.4/leaflet.css" />
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .section-title {
+            margin-top: 30px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            display: inline-block;
+        }
+
+        #map {
+            height: 420px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            background: #e5e3df;
+        }
+
+        .filter-bar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: #e0e0e0;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            background-color: #eee;
+            cursor: pointer;
+        }
+
+        .card-body {
+            padding: 18px;
+        }
+
+        .card-title {
+            margin: 0 0 5px 0;
+            font-size: 1.25rem;
+        }
+
+        .card-latin {
+            font-style: italic;
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+
+        .card-location {
+            font-size: 0.9rem;
+            color: #444;
+            margin-bottom: 8px;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .exif-tag {
+            background: #f0f4f8;
+            color: #334e68;
+            font-size: 0.78rem;
+            padding: 6px 10px;
+            border-radius: 6px;
+            display: inline-block;
+            font-family: monospace;
+        }
+
+        /* 弹窗 UI */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #fff;
+            max-width: 800px;
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        @media (min-width: 600px) {
+            .modal-content {
+                flex-direction: row;
+            }
+        }
+
+        .modal-img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            background: #000;
+        }
+
+        @media (min-width: 600px) {
+            .modal-img {
+                width: 55%;
+                max-height: none;
+            }
+        }
+
+        .modal-info {
+            padding: 25px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px; right: 16px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            background: rgba(0,0,0,0.5);
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🌿 个人野生动物图鉴 & 足迹地图</h1>
+        <p>基于 Astro + Leaflet 构建的轻量级生态观察日志</p>
+    </header>
+
+    <main>
+        <h2 class="section-title">🗺️ 观察足迹</h2>
+        <div id="map"></div>
+
+        <h2 class="section-title">🔍 物种记录卡片</h2>
+        <div class="filter-bar">
+            <button class="filter-btn active" onclick="doSelect('all', this)">全部展示</button>
+            <button class="filter-btn" onclick="doSelect('bird', this)">鸟类</button>
+            <button class="filter-btn" onclick="doSelect('mammal', this)">哺乳类</button>
+        </div>
+
+        <div class="gallery">
+            {animals.map((item, index) => (
+                <div class={`card animal-card item-${item.category}`}>
+                    <img src={item.image} alt={item.name} onclick={`openModal(${index})`} />
+                    <div class="card-body">
+                        <h3 class="card-title">{item.name}</h3>
+                        <div class="card-latin">{item.latinName}</div>
+                        <div class="card-location">📍 {item.location}</div>
+                        <p class="card-desc">{item.desc}</p>
+                        <div class="exif-tag">📷 {item.exif}</div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </main>
+
+    <!-- 详情弹窗 -->
+    <div id="image-modal" class="modal-backdrop" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <img id="m-img" class="modal-img" src="" alt="" />
+            <div class="modal-info">
+                <h2 id="m-title" style="margin-top:0; color: var(--primary-color);"></h2>
+                <p id="m-latin" style="font-style: italic; color: #666;"></p>
+                <p id="m-location" style="color: #444; font-size: 0.95rem;"></p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;" />
+                <p id="m-desc" style="line-height: 1.6; color: #444;"></p>
+                <div id="m-exif" class="exif-tag" style="margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本引入与初始化 -->
+    <script src="https://cdn.staticfile.net/leaflet/1.9.4/leaflet.js" is:inline></script>
+    <script id="animals-data" type="application/json" is:inline set:html={JSON.stringify(animals)}></script>
+
+    <script is:inline>
+        var rawData = document.getElementById('animals-data').textContent;
+        var animals = JSON.parse(rawData);
+
+        // 1. 打开弹窗
+        window.openModal = function(index) {
+            var item = animals[index];
+            if (!item) return;
+
+            document.getElementById('m-img').src = item.image;
+            document.getElementById('m-title').textContent = item.name;
+            document.getElementById('m-latin').textContent = item.latinName;
+            document.getElementById('m-location').textContent = '📍 观察地点：' + item.location;
+            document.getElementById('m-desc').textContent = item.desc;
+            document.getElementById('m-exif').textContent = '📷 ' + item.exif;
+
+            document.getElementById('image-modal').classList.add('open');
+        };
+
+        // 2. 关闭弹窗
+        window.closeModal = function(e) {
+            if (!e || e.target.id === 'image-modal' || e.target.classList.contains('modal-close')) {
+                document.getElementById('image-modal').classList.remove('open');
+            }
+        };
+
+        // 按 Esc 关闭弹窗
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // 3. 分类筛选
+        window.doSelect = function(type, btn) {
+            var btns = document.querySelectorAll('.filter-btn');
+            btns.forEach(function(b) { b.classList.remove('active'); });
+            if (btn) btn.classList.add('active');
+
+            var cards = document.querySelectorAll('.animal-card');
+            cards.forEach(function(card) {
+                if (type === 'all' || card.classList.contains('item-' + type)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        };
+
+        // 4. 地图初始化逻辑（带相同坐标自动合并功能）
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof L !== 'undefined') {
+                var map = L.map('map').setView([30.65, 104.06], 6);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                  maxZoom: 19,
+                  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                // 按坐标将多物种分组
+                var groupedAnimals = {};
+                animals.forEach(function(item, index) {
+                    if (item.coords && item.coords.length === 2) {
+                        var key = item.coords.join(',');
+                        if (!groupedAnimals[key]) {
+                            groupedAnimals[key] = {
+                                coords: item.coords,
+                                locationName: item.location,
+                                list: []
+                            };
+                        }
+                        groupedAnimals[key].list.push({ item: item, index: index });
+                    }
+                });
+
+                // 为同一坐标地点渲染统一的 Marker 标注气泡
+                Object.keys(groupedAnimals).forEach(function(key) {
+                    var group = groupedAnimals[key];
+                    
+                    var popupHtml = '<div style="max-height:180px; overflow-y:auto; padding-right:5px;">';
+                    popupHtml += '<strong style="color:#2e7d32;">📍 ' + group.locationName + ' (' + group.list.length + ' 种观察）</strong>';
+                    popupHtml += '<hr style="margin:6px 0; border:0; border-top:1px solid #eee;"/>';
+                    
+                    group.list.forEach(function(obj) {
+                        popupHtml += '<div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px;">';
+                        popupHtml += '<span style="font-weight:bold;">' + obj.item.name + '</span>';
+                        popupHtml += '<a href="javascript:void(0)" onclick="openModal(' + obj.index + ')" style="color:#2e7d32; text-decoration:none; font-size:12px; background:#f0f4f8; padding:2px 6px; border-radius:4px;">查看大图 &raquo;</a>';
+                        popupHtml += '</div>';
+                    });
+                    
+                    popupHtml += '</div>';
+
+                    L.marker(group.coords).addTo(map).bindPopup(popupHtml);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
