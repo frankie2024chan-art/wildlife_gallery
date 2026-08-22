@@ -1,34 +1,33 @@
 ---
-// 1. 数据配置（同一地点包含多个物种会自动在地图弹窗中合并）
 const animals = [
   {
     name: "普通翠鸟",
     latinName: "Alcedo atthis",
     location: "四川成都锦江区",
-    category: "bird",
+    iucn: "LC",
+    taxonomy: "passerine",
     coords: [30.65, 104.06],
     exif: "Sony A7R5 | 600mm | f/4 | 1/2000s | ISO 800",
-    image: "/images/kingfisher.jpg",
+    // 1. 将 image 改为数组 images，存放多张图片路径
+    images: [
+      "/images/kingfisher-1.jpg",
+      "/images/kingfisher-2.jpg",
+      "/images/kingfisher-3.jpg"
+    ],
     desc: "清晨在岸边捕食小鱼的翠鸟，羽毛呈金属般的绚丽蓝色。"
-  },
-  {
-    name: "白鹭",
-    latinName: "Egretta garzetta",
-    location: "四川成都锦江区", // 与翠鸟相同坐标，地图会自动分组展示
-    category: "bird",
-    coords: [30.65, 104.06],
-    exif: "Sony A7R5 | 400mm | f/5.6 | 1/1600s | ISO 400",
-    image: "/images/egret.jpg",
-    desc: "水边静立等候猎物的白鹭，姿态优美。"
   },
   {
     name: "大熊猫",
     latinName: "Ailuropoda melanoleuca",
     location: "四川卧龙自然保护区",
-    category: "mammal",
+    iucn: "VU",
+    taxonomy: "carnivora",
     coords: [30.98, 103.14],
     exif: "Canon R5 | 400mm | f/2.8 | 1/1000s | ISO 400",
-    image: "/images/panda.jpg",
+    images: [
+      "/images/DSCF4233.JPG",
+      "/images/DSCF4203.jpg"
+    ],
     desc: "竹林间偶遇正在享用早餐的大熊猫，憨态可掬。"
   }
 ];
@@ -40,7 +39,6 @@ const animals = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>野生动物观察图鉴与足迹</title>
-    <!-- 使用国内字节跳动 Staticfile 镜像 CDN -->
     <link rel="stylesheet" href="https://cdn.staticfile.net/leaflet/1.9.4/leaflet.css" />
     <style>
         :root {
@@ -82,19 +80,39 @@ const animals = [
             background: #e5e3df;
         }
 
-        .filter-bar {
-            margin-bottom: 20px;
+        /* 筛选面板样式 */
+        .filter-panel {
+            background: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #555;
+            min-width: 100px;
         }
 
         .filter-btn {
             background: #e0e0e0;
             border: none;
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 20px;
             cursor: pointer;
+            font-size: 0.85rem;
             font-weight: bold;
             transition: all 0.2s ease;
         }
@@ -104,6 +122,7 @@ const animals = [
             color: #fff;
         }
 
+        /* 画廊与卡片样式 */
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -123,16 +142,62 @@ const animals = [
             box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
 
-        .card img {
-            width: 100%;
+        .card-img-wrapper {
+            position: relative;
             height: 220px;
-            object-fit: cover;
             background-color: #eee;
             cursor: pointer;
         }
 
+        .card-img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 多图角标提示 */
+        .img-count-badge {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            backdrop-filter: blur(2px);
+        }
+
         .card-body {
             padding: 18px;
+        }
+
+        .card-tags {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        /* IUCN 色彩划分 */
+        .tag-iucn-CR { background-color: #d32f2f; }
+        .tag-iucn-EN { background-color: #f57c00; }
+        .tag-iucn-VU { background-color: #fbc02d; color: #000; }
+        .tag-iucn-NT { background-color: #7cb342; }
+        .tag-iucn-LC { background-color: #388e3c; }
+
+        .tag-taxonomy {
+            background-color: #eceff1;
+            color: #455a64;
         }
 
         .card-title {
@@ -170,76 +235,144 @@ const animals = [
             font-family: monospace;
         }
 
-        /* 弹窗 UI */
-        .modal-backdrop {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.75);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+		/* 弹窗 UI 样式修复 */
+		.modal-backdrop {
+			display: none;
+			position: fixed;
+			top: 0; left: 0; width: 100%; height: 100%;
+			background: rgba(0,0,0,0.85);
+			z-index: 9999;
+			justify-content: center;
+			align-items: center;
+			padding: 20px;
+			box-sizing: border-box;
+		}
 
-        .modal-backdrop.open {
-            display: flex;
-        }
+		.modal-backdrop.open {
+			display: flex;
+		}
 
-        .modal-content {
-            background: #fff;
-            max-width: 800px;
-            width: 100%;
-            border-radius: 16px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-            max-height: 90vh;
-        }
+		.modal-content {
+			background: #fff;
+			max-width: 900px;
+			width: 100%;
+			height: 80vh; /* 强制限定弹窗总高度为屏幕高度的 80% */
+			border-radius: 16px;
+			overflow: hidden;
+			position: relative;
+			box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+			display: flex;
+			flex-direction: column;
+		}
 
-        @media (min-width: 600px) {
-            .modal-content {
-                flex-direction: row;
-            }
-        }
+		@media (min-width: 650px) {
+			.modal-content {
+				flex-direction: row; /* 左右两栏布局 */
+			}
+		}
 
-        .modal-img {
-            width: 100%;
-            max-height: 400px;
-            object-fit: cover;
-            background: #000;
-        }
+		/* 左侧图片区域：限制最大宽度与高度 */
+		.modal-gallery-container {
+			position: relative;
+			background: #000;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-between;
+			align-items: center;
+			width: 100%;
+			height: 50%; /* 移动端占一半高度 */
+			overflow: hidden;
+		}
 
-        @media (min-width: 600px) {
-            .modal-img {
-                width: 55%;
-                max-height: none;
-            }
-        }
+		@media (min-width: 650px) {
+			.modal-gallery-container {
+				width: 60%;  /* 桌面端占 60% 宽度 */
+				height: 100%; /* 高度充满弹窗 */
+			}
+		}
 
-        .modal-info {
-            padding: 25px;
-            overflow-y: auto;
-            flex: 1;
-        }
+		/* 图片展示外层包裹区 */
+		.modal-img-wrapper {
+			position: relative;
+			width: 100%;
+			flex: 1; /* 自动撑满剩余空间，避免把缩略图挤出去 */
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			overflow: hidden;
+		}
 
-        .modal-close {
-            position: absolute;
-            top: 12px; right: 16px;
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-            background: rgba(0,0,0,0.5);
-            width: 36px; height: 36px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            z-index: 1000;
-            pointer-events: auto;
-        }
+		.modal-img {
+			max-width: 100%;
+			max-height: 100%;
+			object-fit: contain; /* 保证整张照片完整适应，不裁剪不拉伸 */
+			display: block;
+		}
+
+		/* 轮播按钮 */
+		.nav-btn {
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
+			background: rgba(0, 0, 0, 0.5);
+			color: white;
+			border: none;
+			font-size: 20px;
+			padding: 10px 14px;
+			cursor: pointer;
+			border-radius: 8px;
+			transition: background 0.2s;
+			user-select: none;
+			z-index: 2;
+		}
+
+		.nav-btn:hover {
+			background: rgba(0, 0, 0, 0.8);
+		}
+
+		.prev-btn { left: 10px; }
+		.next-btn { right: 10px; }
+
+		/* 底部缩略图栏 */
+		.modal-thumbnails {
+			display: flex;
+			gap: 8px;
+			padding: 8px;
+			background: rgba(0, 0, 0, 0.9);
+			width: 100%;
+			height: 60px; /* 固定缩略图栏的高度 */
+			box-sizing: border-box;
+			justify-content: center;
+			align-items: center;
+			overflow-x: auto;
+			flex-shrink: 0; /* 防止被图片压缩 */
+		}
+
+		.thumb-img {
+			width: 44px;
+			height: 44px;
+			object-fit: cover;
+			border-radius: 4px;
+			cursor: pointer;
+			opacity: 0.5;
+			transition: all 0.2s;
+			border: 2px solid transparent;
+			flex-shrink: 0;
+		}
+
+		.thumb-img.active {
+			opacity: 1;
+			border-color: #fff;
+		}
+
+		/* 右侧文本区域 */
+		.modal-info {
+			padding: 25px;
+			overflow-y: auto; /* 文本过长时独立滚动 */
+			flex: 1;
+			height: 100%;
+			box-sizing: border-box;
+		}
     </style>
 </head>
 <body>
@@ -254,17 +387,49 @@ const animals = [
         <div id="map"></div>
 
         <h2 class="section-title">🔍 物种记录卡片</h2>
-        <div class="filter-bar">
-            <button class="filter-btn active" onclick="doSelect('all', this)">全部展示</button>
-            <button class="filter-btn" onclick="doSelect('bird', this)">鸟类</button>
-            <button class="filter-btn" onclick="doSelect('mammal', this)">哺乳类</button>
+        <div class="filter-panel">
+            <div class="filter-row">
+                <span class="filter-label">🔴 IUCN 等级：</span>
+                <button class="filter-btn active" data-type="iucn" data-value="all" onclick="toggleTag(this)">全部</button>
+                <button class="filter-btn" data-type="iucn" data-value="CR" onclick="toggleTag(this)">极危 (CR)</button>
+                <button class="filter-btn" data-type="iucn" data-value="EN" onclick="toggleTag(this)">濒危 (EN)</button>
+                <button class="filter-btn" data-type="iucn" data-value="VU" onclick="toggleTag(this)">易危 (VU)</button>
+                <button class="filter-btn" data-type="iucn" data-value="NT" onclick="toggleTag(this)">近危 (NT)</button>
+                <button class="filter-btn" data-type="iucn" data-value="LC" onclick="toggleTag(this)">无危 (LC)</button>
+            </div>
+
+            <div class="filter-row">
+                <span class="filter-label">🐾 分类科属：</span>
+                <button class="filter-btn active" data-type="taxonomy" data-value="all" onclick="toggleTag(this)">全部</button>
+                <button class="filter-btn" data-type="taxonomy" data-value="passerine" onclick="toggleTag(this)">雀形目</button>
+                <button class="filter-btn" data-type="taxonomy" data-value="carnivora" onclick="toggleTag(this)">食肉目</button>
+                <button class="filter-btn" data-type="taxonomy" data-value="artiodactyla" onclick="toggleTag(this)">偶蹄目</button>
+            </div>
         </div>
 
         <div class="gallery">
             {animals.map((item, index) => (
-                <div class={`card animal-card item-${item.category}`}>
-                    <img src={item.image} alt={item.name} onclick={`openModal(${index})`} />
+                <div 
+                    class="card animal-card" 
+                    data-iucn={item.iucn}
+                    data-taxonomy={item.taxonomy}
+                >
+                    <!-- 展示第一张照片作为封面，多图时显示数量标签 -->
+                    <div class="card-img-wrapper" onclick={`openModal(${index})`}>
+                        <img src={item.images[0]} alt={item.name} />
+                        {item.images.length > 1 && (
+                            <span class="img-count-badge">📷 {item.images.length} 张照片</span>
+                        )}
+                    </div>
                     <div class="card-body">
+                        <div class="card-tags">
+                            <span class={`tag tag-iucn-${item.iucn}`}>
+                                {item.iucn === 'CR' ? '极危 CR' : item.iucn === 'EN' ? '濒危 EN' : item.iucn === 'VU' ? '易危 VU' : item.iucn === 'NT' ? '近危 NT' : '无危 LC'}
+                            </span>
+                            <span class="tag tag-taxonomy">
+                                {item.taxonomy === 'passerine' ? '雀形目' : item.taxonomy === 'waterbird' ? '游禽/水鸟' : item.taxonomy === 'raptor' ? '猛禽' : item.taxonomy === 'carnivora' ? '食肉目' : item.taxonomy === 'artiodactyla' ? '偶蹄目' : '其他'}
+                            </span>
+                        </div>
                         <h3 class="card-title">{item.name}</h3>
                         <div class="card-latin">{item.latinName}</div>
                         <div class="card-location">📍 {item.location}</div>
@@ -276,11 +441,21 @@ const animals = [
         </div>
     </main>
 
-    <!-- 详情弹窗 -->
+    <!-- 多图交互 Modal -->
     <div id="image-modal" class="modal-backdrop" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <span class="modal-close" onclick="closeModal()">&times;</span>
-            <img id="m-img" class="modal-img" src="" alt="" />
+            
+            <div class="modal-gallery-container">
+                <div class="modal-img-wrapper">
+                    <button class="nav-btn prev-btn" onclick="prevImage(event)">&#10094;</button>
+                    <img id="m-img" class="modal-img" src="" alt="" />
+                    <button class="nav-btn next-btn" onclick="nextImage(event)">&#10095;</button>
+                </div>
+                <!-- 底部缩略图 -->
+                <div id="m-thumbnails" class="modal-thumbnails"></div>
+            </div>
+
             <div class="modal-info">
                 <h2 id="m-title" style="margin-top:0; color: var(--primary-color);"></h2>
                 <p id="m-latin" style="font-style: italic; color: #666;"></p>
@@ -292,7 +467,7 @@ const animals = [
         </div>
     </div>
 
-    <!-- 脚本引入与初始化 -->
+    <!-- 脚本逻辑 -->
     <script src="https://cdn.staticfile.net/leaflet/1.9.4/leaflet.js" is:inline></script>
     <script id="animals-data" type="application/json" is:inline set:html={JSON.stringify(animals)}></script>
 
@@ -300,19 +475,85 @@ const animals = [
         var rawData = document.getElementById('animals-data').textContent;
         var animals = JSON.parse(rawData);
 
+        // 状态变量
+        var currentAnimalIndex = 0;
+        var currentImageIndex = 0;
+        var currentFilter = { iucn: 'all', taxonomy: 'all' };
+
         // 1. 打开弹窗
-        window.openModal = function(index) {
-            var item = animals[index];
+        window.openModal = function(animalIdx) {
+            currentAnimalIndex = animalIdx;
+            currentImageIndex = 0; // 重置到第 1 张图
+
+            var item = animals[animalIdx];
             if (!item) return;
 
-            document.getElementById('m-img').src = item.image;
+            // 填充文本信息
             document.getElementById('m-title').textContent = item.name;
             document.getElementById('m-latin').textContent = item.latinName;
             document.getElementById('m-location').textContent = '📍 观察地点：' + item.location;
             document.getElementById('m-desc').textContent = item.desc;
             document.getElementById('m-exif').textContent = '📷 ' + item.exif;
 
+            // 更新图片与缩略图
+            updateGalleryDisplay();
+
             document.getElementById('image-modal').classList.add('open');
+        };
+
+        // 切换显示的图片
+        function updateGalleryDisplay() {
+            var item = animals[currentAnimalIndex];
+            var images = item.images || [];
+
+            // 主图更新
+            document.getElementById('m-img').src = images[currentImageIndex];
+
+            // 按钮显示控制（如果只有 1 张图则隐藏左右切换按钮）
+            var prevBtn = document.querySelector('.prev-btn');
+            var nextBtn = document.querySelector('.next-btn');
+            if (images.length <= 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            } else {
+                prevBtn.style.display = 'block';
+                nextBtn.style.display = 'block';
+            }
+
+            // 渲染缩略图
+            var thumbContainer = document.getElementById('m-thumbnails');
+            thumbContainer.innerHTML = '';
+            
+            if (images.length > 1) {
+                thumbContainer.style.display = 'flex';
+                images.forEach(function(src, imgIdx) {
+                    var thumb = document.createElement('img');
+                    thumb.src = src;
+                    thumb.className = 'thumb-img' + (imgIdx === currentImageIndex ? ' active' : '');
+                    thumb.onclick = function() {
+                        currentImageIndex = imgIdx;
+                        updateGalleryDisplay();
+                    };
+                    thumbContainer.appendChild(thumb);
+                });
+            } else {
+                thumbContainer.style.display = 'none';
+            }
+        }
+
+        // 上一张 / 下一张
+        window.prevImage = function(e) {
+            if (e) e.stopPropagation();
+            var images = animals[currentAnimalIndex].images;
+            currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+            updateGalleryDisplay();
+        };
+
+        window.nextImage = function(e) {
+            if (e) e.stopPropagation();
+            var images = animals[currentAnimalIndex].images;
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            updateGalleryDisplay();
         };
 
         // 2. 关闭弹窗
@@ -322,56 +563,61 @@ const animals = [
             }
         };
 
-        // 按 Esc 关闭弹窗
+        // 按键监听：Esc 关闭，左/右方向键切图
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeModal();
+            var modal = document.getElementById('image-modal');
+            if (modal.classList.contains('open')) {
+                if (e.key === 'Escape') closeModal();
+                if (e.key === 'ArrowLeft') prevImage();
+                if (e.key === 'ArrowRight') nextImage();
+            }
         });
 
-        // 3. 分类筛选
-        window.doSelect = function(type, btn) {
-            var btns = document.querySelectorAll('.filter-btn');
-            btns.forEach(function(b) { b.classList.remove('active'); });
-            if (btn) btn.classList.add('active');
+        // 3. 多条件筛选
+        window.toggleTag = function(btn) {
+            var type = btn.getAttribute('data-type');
+            var value = btn.getAttribute('data-value');
+
+            var siblingBtns = btn.parentElement.querySelectorAll('.filter-btn');
+            siblingBtns.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+
+            currentFilter[type] = value;
 
             var cards = document.querySelectorAll('.animal-card');
             cards.forEach(function(card) {
-                if (type === 'all' || card.classList.contains('item-' + type)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
+                var cardIucn = card.getAttribute('data-iucn');
+                var cardTaxonomy = card.getAttribute('data-taxonomy');
+
+                var matchIucn = (currentFilter.iucn === 'all' || cardIucn === currentFilter.iucn);
+                var matchTaxonomy = (currentFilter.taxonomy === 'all' || cardTaxonomy === currentFilter.taxonomy);
+
+                card.style.display = (matchIucn && matchTaxonomy) ? 'block' : 'none';
             });
         };
 
-        // 4. 地图初始化逻辑（带相同坐标自动合并功能）
+        // 4. 地图初始化
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof L !== 'undefined') {
                 var map = L.map('map').setView([30.65, 104.06], 6);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                   maxZoom: 19,
-                  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  attribution: '&copy; OpenStreetMap'
                 }).addTo(map);
 
-                // 按坐标将多物种分组
                 var groupedAnimals = {};
                 animals.forEach(function(item, index) {
                     if (item.coords && item.coords.length === 2) {
                         var key = item.coords.join(',');
                         if (!groupedAnimals[key]) {
-                            groupedAnimals[key] = {
-                                coords: item.coords,
-                                locationName: item.location,
-                                list: []
-                            };
+                            groupedAnimals[key] = { coords: item.coords, locationName: item.location, list: [] };
                         }
                         groupedAnimals[key].list.push({ item: item, index: index });
                     }
                 });
 
-                // 为同一坐标地点渲染统一的 Marker 标注气泡
                 Object.keys(groupedAnimals).forEach(function(key) {
                     var group = groupedAnimals[key];
-                    
                     var popupHtml = '<div style="max-height:180px; overflow-y:auto; padding-right:5px;">';
                     popupHtml += '<strong style="color:#2e7d32;">📍 ' + group.locationName + ' (' + group.list.length + ' 种观察）</strong>';
                     popupHtml += '<hr style="margin:6px 0; border:0; border-top:1px solid #eee;"/>';
@@ -379,10 +625,9 @@ const animals = [
                     group.list.forEach(function(obj) {
                         popupHtml += '<div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px;">';
                         popupHtml += '<span style="font-weight:bold;">' + obj.item.name + '</span>';
-                        popupHtml += '<a href="javascript:void(0)" onclick="openModal(' + obj.index + ')" style="color:#2e7d32; text-decoration:none; font-size:12px; background:#f0f4f8; padding:2px 6px; border-radius:4px;">查看大图 &raquo;</a>';
+                        popupHtml += '<a href="javascript:void(0)" onclick="openModal(' + obj.index + ')" style="color:#2e7d32; text-decoration:none; font-size:12px; background:#f0f4f8; padding:2px 6px; border-radius:4px;">查看相册 &raquo;</a>';
                         popupHtml += '</div>';
                     });
-                    
                     popupHtml += '</div>';
 
                     L.marker(group.coords).addTo(map).bindPopup(popupHtml);
