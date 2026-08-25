@@ -1,0 +1,442 @@
+---
+const API_BASE_URL = "https://api.frankiewildlife.bid";
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>添加物种记录</title>
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --border-color: #dbe5de;
+            --text-color: #263b2a;
+            --muted-color: #637067;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 28px 18px 44px;
+        }
+
+        main {
+            margin: 0 auto;
+            max-width: 960px;
+        }
+
+        .topbar {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            gap: 16px;
+        }
+
+        .back-link {
+            color: var(--primary-color);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        h1 {
+            color: #17351d;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 500;
+            line-height: 1.08;
+            margin: 0;
+        }
+
+        .subtitle {
+            color: var(--muted-color);
+            margin: 10px 0 0;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            padding: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin-top: 22px;
+        }
+
+        .field {
+            display: grid;
+            gap: 8px;
+        }
+
+        .field.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            color: #415146;
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+
+        input,
+        select,
+        textarea {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            color: var(--text-color);
+            font: inherit;
+            padding: 11px 12px;
+            width: 100%;
+        }
+
+        textarea {
+            min-height: 128px;
+            resize: vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.13);
+            outline: none;
+        }
+
+        .actions {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        button {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 800;
+            padding: 12px 18px;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.58;
+        }
+
+        .secondary-button {
+            background: #edf3ef;
+            color: #234b27;
+        }
+
+        .status {
+            border-radius: 8px;
+            color: #3d4b41;
+            display: none;
+            font-weight: 700;
+            margin-top: 18px;
+            padding: 12px 14px;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.success {
+            background: #e7f4ea;
+            color: #22632a;
+        }
+
+        .status.error {
+            background: #fdeaea;
+            color: #a92727;
+        }
+
+        .preview-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .preview-item {
+            align-items: center;
+            background: #f8faf9;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            gap: 12px;
+            padding: 8px;
+        }
+
+        .preview-item img {
+            aspect-ratio: 1;
+            border-radius: 6px;
+            object-fit: cover;
+            width: 54px;
+        }
+
+        .preview-name {
+            color: var(--muted-color);
+            font-size: 0.9rem;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 720px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="topbar">
+            <a class="back-link" href="/">返回首页</a>
+        </div>
+
+        <section class="panel">
+            <h1>添加物种记录</h1>
+            <p class="subtitle">上传图片后，记录会保存到 Cloudflare R2 和 D1。</p>
+
+            <form id="species-form">
+                <div class="form-grid">
+                    <div class="field full">
+                        <label for="admin-token">管理密码</label>
+                        <input id="admin-token" name="adminToken" type="password" autocomplete="current-password" required />
+                    </div>
+
+                    <div class="field">
+                        <label for="name">中文名</label>
+                        <input id="name" name="name" type="text" required />
+                    </div>
+
+                    <div class="field">
+                        <label for="latin-name">Latin name</label>
+                        <input id="latin-name" name="latinName" type="text" required />
+                    </div>
+
+                    <div class="field">
+                        <label for="group-type">类别</label>
+                        <select id="group-type" name="groupType" required>
+                            <option value="bird">鸟类</option>
+                            <option value="mammal">兽类</option>
+                            <option value="fish">鱼类</option>
+                            <option value="invertebrate">无脊椎类</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="taxonomy">分类标签</label>
+                        <select id="taxonomy" name="taxonomy">
+                            <option value="">其他</option>
+                            <option value="passerine">雀形目</option>
+                            <option value="waterbird">游禽 / 水鸟</option>
+                            <option value="raptor">猛禽</option>
+                            <option value="carnivora">食肉目</option>
+                            <option value="artiodactyla">偶蹄目</option>
+                            <option value="fish">鱼类</option>
+                            <option value="invertebrate">无脊椎类</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="iucn">IUCN 等级</label>
+                        <select id="iucn" name="iucn">
+                            <option value="LC">无危 LC</option>
+                            <option value="NT">近危 NT</option>
+                            <option value="VU">易危 VU</option>
+                            <option value="EN">濒危 EN</option>
+                            <option value="CR">极危 CR</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="location">拍摄地点</label>
+                        <input id="location" name="location" type="text" />
+                    </div>
+
+                    <div class="field">
+                        <label for="latitude">纬度</label>
+                        <input id="latitude" name="latitude" type="number" step="any" />
+                    </div>
+
+                    <div class="field">
+                        <label for="longitude">经度</label>
+                        <input id="longitude" name="longitude" type="number" step="any" />
+                    </div>
+
+                    <div class="field full">
+                        <label for="note">备注</label>
+                        <textarea id="note" name="note"></textarea>
+                    </div>
+
+                    <div class="field full">
+                        <label for="images">图片</label>
+                        <input id="images" name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+                        <div id="preview-list" class="preview-list"></div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button id="submit-button" type="submit">保存记录</button>
+                    <button class="secondary-button" type="reset">清空</button>
+                </div>
+
+                <div id="status" class="status"></div>
+            </form>
+        </section>
+    </main>
+
+    <script is:inline define:vars={{ API_BASE_URL }}>
+        var form = document.getElementById('species-form');
+        var tokenInput = document.getElementById('admin-token');
+        var imagesInput = document.getElementById('images');
+        var previewList = document.getElementById('preview-list');
+        var submitButton = document.getElementById('submit-button');
+        var statusBox = document.getElementById('status');
+        var savedToken = window.localStorage.getItem('wildlifeAdminToken');
+
+        if (savedToken) {
+            tokenInput.value = savedToken;
+        }
+
+        imagesInput.addEventListener('change', function() {
+            previewList.innerHTML = '';
+            Array.from(imagesInput.files || []).forEach(function(file) {
+                var item = document.createElement('div');
+                item.className = 'preview-item';
+
+                var img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.alt = file.name;
+
+                var name = document.createElement('div');
+                name.className = 'preview-name';
+                name.textContent = file.name;
+
+                item.appendChild(img);
+                item.appendChild(name);
+                previewList.appendChild(item);
+            });
+        });
+
+        form.addEventListener('reset', function() {
+            window.setTimeout(function() {
+                previewList.innerHTML = '';
+                showStatus('', '');
+            }, 0);
+        });
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            submitButton.disabled = true;
+            showStatus('正在上传并保存...', '');
+
+            try {
+                var formData = new FormData(form);
+                var token = String(formData.get('adminToken') || '').trim();
+                window.localStorage.setItem('wildlifeAdminToken', token);
+
+                var uploadedImages = [];
+                var files = Array.from(imagesInput.files || []);
+
+                for (var index = 0; index < files.length; index += 1) {
+                    uploadedImages.push(await uploadImage(files[index], token));
+                }
+
+                var payload = {
+                    name: String(formData.get('name') || '').trim(),
+                    latinName: String(formData.get('latinName') || '').trim(),
+                    groupType: String(formData.get('groupType') || '').trim(),
+                    taxonomy: String(formData.get('taxonomy') || '').trim(),
+                    iucn: String(formData.get('iucn') || 'LC').trim(),
+                    location: String(formData.get('location') || '').trim(),
+                    latitude: normalizeNumber(formData.get('latitude')),
+                    longitude: normalizeNumber(formData.get('longitude')),
+                    note: String(formData.get('note') || '').trim(),
+                    images: uploadedImages
+                };
+
+                var response = await fetch(API_BASE_URL + '/species', {
+                    method: 'POST',
+                    headers: {
+                        'authorization': 'Bearer ' + token,
+                        'content-type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(await readError(response));
+                }
+
+                form.reset();
+                previewList.innerHTML = '';
+                tokenInput.value = token;
+                showStatus('保存成功，记录已经进入 D1。', 'success');
+            } catch (error) {
+                showStatus(error.message || '保存失败，请检查密码和网络。', 'error');
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+
+        async function uploadImage(file, token) {
+            var body = new FormData();
+            body.append('image', file);
+
+            var response = await fetch(API_BASE_URL + '/upload', {
+                method: 'POST',
+                headers: { 'authorization': 'Bearer ' + token },
+                body: body
+            });
+
+            if (!response.ok) {
+                throw new Error(await readError(response));
+            }
+
+            return response.json();
+        }
+
+        function normalizeNumber(value) {
+            var text = String(value || '').trim();
+            return text ? Number(text) : null;
+        }
+
+        async function readError(response) {
+            try {
+                var data = await response.json();
+                return data.error || '请求失败';
+            } catch (error) {
+                return '请求失败';
+            }
+        }
+
+        function showStatus(message, type) {
+            statusBox.textContent = message;
+            statusBox.className = 'status' + (message ? ' show' : '') + (type ? ' ' + type : '');
+        }
+    </script>
+</body>
+</html>

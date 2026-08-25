@@ -73,6 +73,33 @@ const animals = [
             box-shadow: 0 4px 12px rgba(0,0,0,0.16);
         }
 
+        .admin-shortcut {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1200;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.16);
+            font-size: 30px;
+            font-weight: 400;
+            line-height: 1;
+            text-decoration: none;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+
+        .admin-shortcut:hover {
+            background: #256b2a;
+            box-shadow: 0 7px 18px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+        }
+
         .sidebar-backdrop {
             display: none;
             position: fixed;
@@ -612,6 +639,7 @@ const animals = [
 <body>
 
     <button class="menu-toggle" type="button" aria-label="打开分类侧边栏" onclick="openSidebar()">☰</button>
+    <a class="admin-shortcut" href="/admin" aria-label="添加物种记录" title="添加物种记录">+</a>
     <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="closeSidebar()"></div>
     <aside id="category-sidebar" class="sidebar" aria-label="动物分类侧边栏">
         <div class="sidebar-header">
