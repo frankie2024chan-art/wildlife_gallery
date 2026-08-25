@@ -1,5 +1,6 @@
 ---
 const IMAGE_BASE_URL = "https://images.frankiewildlife.bid";
+const API_BASE_URL = "https://api.frankiewildlife.bid";
 
 const animals = [
   {
@@ -403,6 +404,17 @@ const animals = [
             object-fit: cover;
         }
 
+        .card-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e8eee9;
+            color: #65736a;
+            font-weight: 700;
+        }
+
         .img-count-badge {
             position: absolute;
             bottom: 10px;
@@ -694,7 +706,7 @@ const animals = [
 
         </div>
 
-        <div class="gallery">
+        <div id="gallery" class="gallery">
             {animals.map((item, index) => (
                 <div 
                     class="card animal-card" 
@@ -758,20 +770,151 @@ const animals = [
     <script src="https://cdn.staticfile.net/leaflet/1.9.4/leaflet.js" is:inline></script>
     <script id="animals-data" type="application/json" is:inline set:html={JSON.stringify(animals)}></script>
 
-    <script is:inline>
+    <script is:inline define:vars={{ API_BASE_URL }}>
         var rawData = document.getElementById('animals-data').textContent;
         var animals = JSON.parse(rawData);
 
         var currentAnimalIndex = 0;
         var currentImageIndex = 0;
+        var wildlifeMap = null;
+        var markerLayer = null;
         var currentFilter = { iucn: 'all', group: 'all', search: '' };
         var sidebarGroups = {
             all: [],
-            bird: ['passerine', 'waterbird', 'raptor'],
-            mammal: ['carnivora', 'artiodactyla'],
+            bird: ['bird', 'passerine', 'waterbird', 'raptor'],
+            mammal: ['mammal', 'carnivora', 'artiodactyla'],
             fish: ['fish'],
             invertebrate: ['invertebrate']
         };
+
+        function normalizeApiAnimal(item) {
+            var imageUrls = Array.isArray(item.images)
+                ? item.images.map(function(image) {
+                    return typeof image === 'string' ? image : image.url;
+                }).filter(Boolean)
+                : [];
+
+            return {
+                name: item.name || '',
+                latinName: item.latinName || item.latin_name || '',
+                location: item.location || '',
+                iucn: item.iucn || 'LC',
+                taxonomy: item.taxonomy || item.groupType || item.group_type || 'other',
+                coords: Array.isArray(item.coordinates) ? item.coordinates : null,
+                exif: item.exif || '',
+                images: imageUrls,
+                desc: item.desc || item.note || ''
+            };
+        }
+
+        function iucnLabel(value) {
+            if (value === 'CR') return '极危 CR';
+            if (value === 'EN') return '濒危 EN';
+            if (value === 'VU') return '易危 VU';
+            if (value === 'NT') return '近危 NT';
+            return '无危 LC';
+        }
+
+        function taxonomyLabel(value) {
+            if (value === 'passerine') return '雀形目';
+            if (value === 'waterbird') return '游禽 / 水鸟';
+            if (value === 'raptor') return '猛禽';
+            if (value === 'carnivora') return '食肉目';
+            if (value === 'artiodactyla') return '偶蹄目';
+            if (value === 'bird') return '鸟类';
+            if (value === 'mammal') return '兽类';
+            if (value === 'fish') return '鱼类';
+            if (value === 'invertebrate') return '无脊椎类';
+            return '其他';
+        }
+
+        function renderGallery() {
+            var gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+
+            animals.forEach(function(item, index) {
+                var card = document.createElement('div');
+                card.className = 'card animal-card';
+                card.setAttribute('data-iucn', item.iucn || '');
+                card.setAttribute('data-taxonomy', item.taxonomy || '');
+                card.setAttribute('data-name', item.name || '');
+                card.setAttribute('data-latin-name', item.latinName || '');
+
+                var imageWrapper = document.createElement('div');
+                imageWrapper.className = 'card-img-wrapper';
+                imageWrapper.onclick = function() { openModal(index); };
+
+                if (item.images && item.images.length > 0) {
+                    var img = document.createElement('img');
+                    img.src = item.images[0];
+                    img.alt = item.name;
+                    imageWrapper.appendChild(img);
+
+                    if (item.images.length > 1) {
+                        var badge = document.createElement('span');
+                        badge.className = 'img-count-badge';
+                        badge.textContent = item.images.length + ' 张照片';
+                        imageWrapper.appendChild(badge);
+                    }
+                } else {
+                    var placeholder = document.createElement('div');
+                    placeholder.className = 'card-placeholder';
+                    placeholder.textContent = '暂无图片';
+                    imageWrapper.appendChild(placeholder);
+                }
+
+                var body = document.createElement('div');
+                body.className = 'card-body';
+
+                var tags = document.createElement('div');
+                tags.className = 'card-tags';
+
+                var iucnTag = document.createElement('span');
+                iucnTag.className = 'tag tag-iucn-' + (item.iucn || 'LC');
+                iucnTag.textContent = iucnLabel(item.iucn);
+                tags.appendChild(iucnTag);
+
+                var taxonomyTag = document.createElement('span');
+                taxonomyTag.className = 'tag tag-taxonomy';
+                taxonomyTag.textContent = taxonomyLabel(item.taxonomy);
+                tags.appendChild(taxonomyTag);
+
+                var title = document.createElement('h3');
+                title.className = 'card-title';
+                title.textContent = item.name;
+
+                var latin = document.createElement('div');
+                latin.className = 'card-latin';
+                latin.textContent = item.latinName;
+
+                var location = document.createElement('div');
+                location.className = 'card-location';
+                location.textContent = item.location ? '📍 ' + item.location : '📍 未填写地点';
+
+                var desc = document.createElement('p');
+                desc.className = 'card-desc';
+                desc.textContent = item.desc || '暂无备注';
+
+                body.appendChild(tags);
+                body.appendChild(title);
+                body.appendChild(latin);
+                body.appendChild(location);
+                body.appendChild(desc);
+
+                if (item.exif) {
+                    var exif = document.createElement('div');
+                    exif.className = 'exif-tag';
+                    exif.textContent = '📷 ' + item.exif;
+                    body.appendChild(exif);
+                }
+
+                card.appendChild(imageWrapper);
+                card.appendChild(body);
+                gallery.appendChild(card);
+            });
+
+            applyFilters();
+        }
 
         window.openModal = function(animalIdx) {
             currentAnimalIndex = animalIdx;
@@ -793,11 +936,21 @@ const animals = [
         function updateGalleryDisplay() {
             var item = animals[currentAnimalIndex];
             var images = item.images || [];
+            var prevBtn = document.querySelector('.prev-btn');
+            var nextBtn = document.querySelector('.next-btn');
+            var thumbContainer = document.getElementById('m-thumbnails');
+
+            if (images.length === 0) {
+                document.getElementById('m-img').removeAttribute('src');
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                thumbContainer.style.display = 'none';
+                thumbContainer.innerHTML = '';
+                return;
+            }
 
             document.getElementById('m-img').src = images[currentImageIndex];
 
-            var prevBtn = document.querySelector('.prev-btn');
-            var nextBtn = document.querySelector('.next-btn');
             if (images.length <= 1) {
                 prevBtn.style.display = 'none';
                 nextBtn.style.display = 'none';
@@ -806,7 +959,6 @@ const animals = [
                 nextBtn.style.display = 'block';
             }
 
-            var thumbContainer = document.getElementById('m-thumbnails');
             thumbContainer.innerHTML = '';
             
             if (images.length > 1) {
@@ -915,13 +1067,73 @@ const animals = [
             applyFilters();
         };
 
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function renderMapMarkers() {
+            if (!wildlifeMap || !markerLayer) return;
+
+            markerLayer.clearLayers();
+
+            var groupedAnimals = {};
+            animals.forEach(function(item, index) {
+                if (item.coords && item.coords.length === 2) {
+                    var key = item.coords.join(',');
+                    if (!groupedAnimals[key]) {
+                        groupedAnimals[key] = { coords: item.coords, locationName: item.location, list: [] };
+                    }
+                    groupedAnimals[key].list.push({ item: item, index: index });
+                }
+            });
+
+            Object.keys(groupedAnimals).forEach(function(key) {
+                var group = groupedAnimals[key];
+                var popupHtml = '<div style="max-height:180px; overflow-y:auto; padding-right:5px;">';
+                popupHtml += '<strong style="color:#2e7d32;">📍 ' + escapeHtml(group.locationName) + ' (' + group.list.length + ' 种观察)</strong>';
+                popupHtml += '<hr style="margin:6px 0; border:0; border-top:1px solid #eee;"/>';
+
+                group.list.forEach(function(obj) {
+                    popupHtml += '<div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px;">';
+                    popupHtml += '<span style="font-weight:bold;">' + escapeHtml(obj.item.name) + '</span>';
+                    popupHtml += '<a href="javascript:void(0)" onclick="openModal(' + obj.index + ')" style="color:#2e7d32; text-decoration:none; font-size:12px; background:#f0f4f8; padding:2px 6px; border-radius:4px;">查看相册 &raquo;</a>';
+                    popupHtml += '</div>';
+                });
+                popupHtml += '</div>';
+
+                L.marker(group.coords).addTo(markerLayer).bindPopup(popupHtml);
+            });
+        }
+
+        async function loadRemoteSpecies() {
+            try {
+                var response = await fetch(API_BASE_URL + '/species');
+                if (!response.ok) return;
+
+                var data = await response.json();
+                if (!Array.isArray(data.species) || data.species.length === 0) return;
+
+                animals = data.species.map(normalizeApiAnimal);
+                renderGallery();
+                renderMapMarkers();
+            } catch (error) {
+                console.warn('Could not load remote species data', error);
+            }
+        };
+
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof L !== 'undefined') {
-                var map = L.map('map').setView([30.65, 104.06], 6);
+                wildlifeMap = L.map('map').setView([30.65, 104.06], 6);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                   maxZoom: 19,
                   attribution: '&copy; OpenStreetMap'
-                }).addTo(map);
+                }).addTo(wildlifeMap);
+                markerLayer = L.layerGroup().addTo(wildlifeMap);
 
                 var groupedAnimals = {};
                 animals.forEach(function(item, index) {
@@ -948,9 +1160,13 @@ const animals = [
                     });
                     popupHtml += '</div>';
 
-                    L.marker(group.coords).addTo(map).bindPopup(popupHtml);
+                    L.marker(group.coords).addTo(markerLayer).bindPopup(popupHtml);
                 });
             }
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            loadRemoteSpecies();
         });
     </script>
 </body>
