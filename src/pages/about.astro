@@ -1,0 +1,163 @@
+---
+const IMAGE_BASE_URL = "https://pub-ddeed961d7584e2a85ef91ff7d8a8378.r2.dev";
+---
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>关于我</title>
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-color);
+            color: #28332b;
+            margin: 0;
+            padding: 28px 20px;
+        }
+
+        main {
+            max-width: 1040px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            color: var(--primary-color);
+            display: inline-block;
+            font-weight: 700;
+            margin-bottom: 24px;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .intro-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            padding: 28px;
+        }
+
+        .intro-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+            gap: 28px;
+            align-items: center;
+        }
+
+        .intro-copy {
+            min-width: 0;
+        }
+
+        .profile-photo {
+            align-self: stretch;
+            border: 1px solid #e2e9e4;
+            border-radius: 10px;
+            min-height: 320px;
+            overflow: hidden;
+            background: #e2e9e4;
+        }
+
+        .profile-photo img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin: 0 0 12px;
+        }
+
+        .lead {
+            color: #4f5f54;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin: 0;
+        }
+
+        section {
+            border-top: 1px solid #e2e9e4;
+            padding-top: 18px;
+            margin-top: 18px;
+        }
+
+        h2 {
+            color: #234b27;
+            font-size: 1.1rem;
+            margin: 0 0 8px;
+        }
+
+        p {
+            color: #56635a;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        @media (max-width: 760px) {
+            .intro-hero {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-photo {
+                min-height: 0;
+                aspect-ratio: 16 / 9;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <a class="back-link" href="/">返回首页</a>
+
+        <article class="intro-card">
+            <div class="intro-hero">
+                <div class="intro-copy">
+                    <h1>关于我</h1>
+                    <p class="lead">
+                        自然的种子，萌芽于童年时外公带我逛动物园的那些午后。
+                        我是 Frankie，一名热爱野生动物的普通人。我坚信这颗蓝色星球并非人类的独享空间；懂得与自然万物和谐共处是人类应有的谦逊。我常常踏上旅程，去世界各地捕捉大自然的痕迹。在镜头之外，我也小范围参与着具体的动保工作。
+                        这里是我为这些自然伙伴建立的影像档案。即使这只是浩瀚网络中的一个小角落，我也将默默坚持记录下去。
+                    </p>
+                </div>
+
+                <div class="profile-photo">
+                    <img src={`${IMAGE_BASE_URL}/person_pictures.jpg`} alt="Frankie 的个人照片" />
+                </div>
+            </div>
+
+            <section>
+                <h2>我的观察方向</h2>
+                <p>主要记录城市、公园、山地和湿地里的鸟类、兽类；部分记录潜水拍摄的水下生物</p>
+            </section>
+
+            <section>
+                <h2>最喜欢的拍摄地点</h2>
+                <p>1.巴西潘塔纳尔湿地 2.坦桑尼亚塞伦盖地国家公园 3. 珊瑚大三角
+    
+                </p>
+            </section>
+
+            <section>
+                <h2>联系方式</h2>
+                <p>Email：frankie2024chan@gmail.---
+                   IG: @frankiechanc
+                ---
+                
+                </p>
+            </section>
+        </article>
+    </main>
+</body>
+</html>

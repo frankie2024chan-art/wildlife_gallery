@@ -1,4 +1,6 @@
 ---
+const IMAGE_BASE_URL = "https://pub-ddeed961d7584e2a85ef91ff7d8a8378.r2.dev";
+
 const animals = [
   {
     name: "普通翠鸟",
@@ -8,11 +10,10 @@ const animals = [
     taxonomy: "passerine",
     coords: [30.65, 104.06],
     exif: "Sony A7R5 | 600mm | f/4 | 1/2000s | ISO 800",
-    // 1. 将 image 改为数组 images，存放多张图片路径
     images: [
-      "/images/kingfisher-1.jpg",
-      "/images/kingfisher-2.jpg",
-      "/images/kingfisher-3.jpg"
+      `${IMAGE_BASE_URL}/kingfisher-1.jpg`,
+      `${IMAGE_BASE_URL}/kingfisher-2.jpg`,
+      `${IMAGE_BASE_URL}/kingfisher-3.jpg`
     ],
     desc: "清晨在岸边捕食小鱼的翠鸟，羽毛呈金属般的绚丽蓝色。"
   },
@@ -25,8 +26,8 @@ const animals = [
     coords: [30.98, 103.14],
     exif: "Canon R5 | 400mm | f/2.8 | 1/1000s | ISO 400",
     images: [
-      "/images/DSCF4233.JPG",
-      "/images/DSCF4203.jpg"
+      `${IMAGE_BASE_URL}/DSCF4409.JPG`,
+      `${IMAGE_BASE_URL}/DSCF4414.JPG`
     ],
     desc: "竹林间偶遇正在享用早餐的大熊猫，憨态可掬。"
   }
@@ -55,14 +56,234 @@ const animals = [
             padding: 20px;
         }
 
+        .menu-toggle {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 1200;
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary-color);
+            color: #fff;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.16);
+        }
+
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.32);
+            z-index: 1100;
+        }
+
+        .sidebar-backdrop.open {
+            display: block;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: min(280px, 82vw);
+            height: 100vh;
+            background: #fff;
+            box-shadow: 8px 0 24px rgba(0,0,0,0.18);
+            z-index: 1300;
+            transform: translateX(-100%);
+            transition: transform 0.24s ease;
+            padding: 22px;
+            box-sizing: border-box;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .sidebar-title {
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .sidebar-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: #eef3ef;
+            color: #234b27;
+            cursor: pointer;
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .sidebar-search {
+            margin-bottom: 16px;
+        }
+
+        .sidebar-search-label {
+            display: block;
+            margin-bottom: 7px;
+            color: #58695d;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .sidebar-search-field {
+            position: relative;
+        }
+
+        .sidebar-search-field::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 13px;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #5f7865;
+            border-radius: 50%;
+            transform: translateY(-58%);
+            pointer-events: none;
+        }
+
+        .sidebar-search-field::after {
+            content: "";
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 8px;
+            height: 2px;
+            background: #5f7865;
+            border-radius: 999px;
+            transform: rotate(45deg);
+            transform-origin: left center;
+            pointer-events: none;
+        }
+
+        .sidebar-search-input {
+            width: 100%;
+            height: 42px;
+            border: 1px solid #cfdad2;
+            border-radius: 8px;
+            background: #fbfdfb;
+            box-sizing: border-box;
+            color: #263b2a;
+            font-size: 0.95rem;
+            padding: 0 12px 0 42px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .sidebar-search-field:focus-within .sidebar-search-input {
+            background: #fff;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.14);
+        }
+
+        .sidebar-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .sidebar-item {
+            width: 100%;
+            border: 1px solid #d9e2dc;
+            border-radius: 8px;
+            background: #f8faf9;
+            color: #263b2a;
+            cursor: pointer;
+            font-size: 0.98rem;
+            font-weight: 700;
+            padding: 12px 14px;
+            text-align: left;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+
+        .sidebar-item:hover,
+        .sidebar-item.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
+        .sidebar-nav {
+            border-top: 1px solid #e3ebe5;
+            margin-top: 18px;
+            padding-top: 16px;
+        }
+
+        .sidebar-link {
+            display: block;
+            border: 1px solid #d9e2dc;
+            border-radius: 8px;
+            background: #f8faf9;
+            color: #263b2a;
+            box-sizing: border-box;
+            font-size: 0.98rem;
+            font-weight: 700;
+            padding: 12px 14px;
+            text-decoration: none;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+
+        .sidebar-link:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: #fff;
+        }
+
         header {
             text-align: center;
-            margin-bottom: 30px;
+            margin: 16px auto 34px;
+            max-width: 900px;
+            padding: 28px 20px 22px;
         }
 
         header h1 {
-            color: var(--primary-color);
-            margin-bottom: 5px;
+            color: #17351d;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 3.2rem;
+            font-weight: 500;
+            line-height: 1.08;
+            margin: 0;
+        }
+
+        header h1::after {
+            content: "";
+            display: block;
+            width: 72px;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 999px;
+            margin: 18px auto 0;
+        }
+
+        header p {
+            color: #5b695f;
+            font-size: 1rem;
+            margin: 14px 0 0;
+        }
+
+        @media (max-width: 650px) {
+            header {
+                padding-top: 48px;
+            }
+
+            header h1 {
+                font-size: 2.3rem;
+            }
         }
 
         .section-title {
@@ -80,7 +301,7 @@ const animals = [
             background: #e5e3df;
         }
 
-        /* 筛选面板样式 */
+        /* 筛选面板 */
         .filter-panel {
             background: #fff;
             padding: 16px;
@@ -122,7 +343,7 @@ const animals = [
             color: #fff;
         }
 
-        /* 画廊与卡片样式 */
+        /* 卡片面板 */
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -155,7 +376,6 @@ const animals = [
             object-fit: cover;
         }
 
-        /* 多图角标提示 */
         .img-count-badge {
             position: absolute;
             bottom: 10px;
@@ -188,7 +408,6 @@ const animals = [
             color: #fff;
         }
 
-        /* IUCN 色彩划分 */
         .tag-iucn-CR { background-color: #d32f2f; }
         .tag-iucn-EN { background-color: #f57c00; }
         .tag-iucn-VU { background-color: #fbc02d; color: #000; }
@@ -235,151 +454,198 @@ const animals = [
             font-family: monospace;
         }
 
-		/* 弹窗 UI 样式修复 */
-		.modal-backdrop {
-			display: none;
-			position: fixed;
-			top: 0; left: 0; width: 100%; height: 100%;
-			background: rgba(0,0,0,0.85);
-			z-index: 9999;
-			justify-content: center;
-			align-items: center;
-			padding: 20px;
-			box-sizing: border-box;
-		}
+        /* ---------------------------------------------------- */
+        /* 彻底修复的 Modal 布局 (解决图片变形与重叠问题) */
+        /* ---------------------------------------------------- */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
 
-		.modal-backdrop.open {
-			display: flex;
-		}
+        .modal-backdrop.open {
+            display: flex;
+        }
 
-		.modal-content {
-			background: #fff;
-			max-width: 900px;
-			width: 100%;
-			height: 80vh; /* 强制限定弹窗总高度为屏幕高度的 80% */
-			border-radius: 16px;
-			overflow: hidden;
-			position: relative;
-			box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-			display: flex;
-			flex-direction: column;
-		}
+        .modal-content {
+            background: #fff;
+            width: 100%;
+            max-width: 900px;
+            height: 80vh; /* 严格把关整个弹窗高度 */
+            max-height: 600px;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+        }
 
-		@media (min-width: 650px) {
-			.modal-content {
-				flex-direction: row; /* 左右两栏布局 */
-			}
-		}
+        @media (min-width: 650px) {
+            .modal-content {
+                flex-direction: row; /* 桌面端并排 */
+            }
+        }
 
-		/* 左侧图片区域：限制最大宽度与高度 */
-		.modal-gallery-container {
-			position: relative;
-			background: #000;
-			display: flex;
-			flex-direction: column;
-			justify-content: space-between;
-			align-items: center;
-			width: 100%;
-			height: 50%; /* 移动端占一半高度 */
-			overflow: hidden;
-		}
+        /* 左侧多图展示栏 */
+        .modal-gallery-container {
+            background: #111;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 50%;
+            position: relative;
+            overflow: hidden;
+        }
 
-		@media (min-width: 650px) {
-			.modal-gallery-container {
-				width: 60%;  /* 桌面端占 60% 宽度 */
-				height: 100%; /* 高度充满弹窗 */
-			}
-		}
+        @media (min-width: 650px) {
+            .modal-gallery-container {
+                width: 60%;
+                height: 100%;
+            }
+        }
 
-		/* 图片展示外层包裹区 */
-		.modal-img-wrapper {
-			position: relative;
-			width: 100%;
-			flex: 1; /* 自动撑满剩余空间，避免把缩略图挤出去 */
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			overflow: hidden;
-		}
+        /* 图像展示核心区 */
+        .modal-img-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 10px;
+        }
 
-		.modal-img {
-			max-width: 100%;
-			max-height: 100%;
-			object-fit: contain; /* 保证整张照片完整适应，不裁剪不拉伸 */
-			display: block;
-		}
+        .modal-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* 保证原图比例完整显示不拉伸 */
+            display: block;
+        }
 
-		/* 轮播按钮 */
-		.nav-btn {
-			position: absolute;
-			top: 50%;
-			transform: translateY(-50%);
-			background: rgba(0, 0, 0, 0.5);
-			color: white;
-			border: none;
-			font-size: 20px;
-			padding: 10px 14px;
-			cursor: pointer;
-			border-radius: 8px;
-			transition: background 0.2s;
-			user-select: none;
-			z-index: 2;
-		}
+        /* 导航按钮 */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            font-size: 18px;
+            padding: 10px 14px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+            user-select: none;
+            z-index: 10;
+        }
 
-		.nav-btn:hover {
-			background: rgba(0, 0, 0, 0.8);
-		}
+        .nav-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
 
-		.prev-btn { left: 10px; }
-		.next-btn { right: 10px; }
+        .prev-btn { left: 10px; }
+        .next-btn { right: 10px; }
 
-		/* 底部缩略图栏 */
-		.modal-thumbnails {
-			display: flex;
-			gap: 8px;
-			padding: 8px;
-			background: rgba(0, 0, 0, 0.9);
-			width: 100%;
-			height: 60px; /* 固定缩略图栏的高度 */
-			box-sizing: border-box;
-			justify-content: center;
-			align-items: center;
-			overflow-x: auto;
-			flex-shrink: 0; /* 防止被图片压缩 */
-		}
+        /* 底部缩略图栏 */
+        .modal-thumbnails {
+            height: 55px;
+            background: #000;
+            display: flex;
+            gap: 8px;
+            padding: 6px;
+            box-sizing: border-box;
+            justify-content: center;
+            align-items: center;
+            overflow-x: auto;
+            flex-shrink: 0; /* 核心：防止被上方主图压缩死 */
+        }
 
-		.thumb-img {
-			width: 44px;
-			height: 44px;
-			object-fit: cover;
-			border-radius: 4px;
-			cursor: pointer;
-			opacity: 0.5;
-			transition: all 0.2s;
-			border: 2px solid transparent;
-			flex-shrink: 0;
-		}
+        .thumb-img {
+            width: 42px;
+            height: 42px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            opacity: 0.4;
+            transition: opacity 0.2s, border-color 0.2s;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+        }
 
-		.thumb-img.active {
-			opacity: 1;
-			border-color: #fff;
-		}
+        .thumb-img.active {
+            opacity: 1;
+            border-color: #2e7d32;
+        }
 
-		/* 右侧文本区域 */
-		.modal-info {
-			padding: 25px;
-			overflow-y: auto; /* 文本过长时独立滚动 */
-			flex: 1;
-			height: 100%;
-			box-sizing: border-box;
-		}
+        /* 右侧信息栏 */
+        .modal-info {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+            height: 100%;
+            box-sizing: border-box;
+            background: #fff;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px; right: 16px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #fff;
+            background: rgba(0,0,0,0.6);
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
 
+    <button class="menu-toggle" type="button" aria-label="打开分类侧边栏" onclick="openSidebar()">☰</button>
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="closeSidebar()"></div>
+    <aside id="category-sidebar" class="sidebar" aria-label="动物分类侧边栏">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title">动物分类</h2>
+            <button class="sidebar-close" type="button" aria-label="关闭侧边栏" onclick="closeSidebar()">×</button>
+        </div>
+        <div class="sidebar-search">
+            <label class="sidebar-search-label" for="species-search">搜索物种</label>
+            <div class="sidebar-search-field">
+                <input
+                    id="species-search"
+                    class="sidebar-search-input"
+                    type="search"
+                    placeholder="中文名或 Latin name"
+                    aria-label="搜索物种中文名或拉丁名"
+                    oninput="setSidebarSearch(this.value)"
+                />
+            </div>
+        </div>
+        <div class="sidebar-list">
+            <button class="sidebar-item active" type="button" data-group="all" onclick="setSidebarCategory(this)">全部</button>
+            <button class="sidebar-item" type="button" data-group="bird" onclick="setSidebarCategory(this)">鸟类</button>
+            <button class="sidebar-item" type="button" data-group="mammal" onclick="setSidebarCategory(this)">兽类</button>
+            <button class="sidebar-item" type="button" data-group="fish" onclick="setSidebarCategory(this)">鱼类</button>
+            <button class="sidebar-item" type="button" data-group="invertebrate" onclick="setSidebarCategory(this)">无脊椎类</button>
+        </div>
+        <nav class="sidebar-nav" aria-label="页面导航">
+            <a class="sidebar-link" href="/about">关于我</a>
+        </nav>
+    </aside>
+
     <header>
-        <h1>🌿 个人野生动物图鉴 & 足迹地图</h1>
-        <p>基于 Astro + Leaflet 构建的轻量级生态观察日志</p>
+        <h1>Frankie Wildlife Gallery</h1>
+        <p>Wildlife moments, field notes, and quiet encounters.</p>
     </header>
 
     <main>
@@ -398,13 +664,6 @@ const animals = [
                 <button class="filter-btn" data-type="iucn" data-value="LC" onclick="toggleTag(this)">无危 (LC)</button>
             </div>
 
-            <div class="filter-row">
-                <span class="filter-label">🐾 分类科属：</span>
-                <button class="filter-btn active" data-type="taxonomy" data-value="all" onclick="toggleTag(this)">全部</button>
-                <button class="filter-btn" data-type="taxonomy" data-value="passerine" onclick="toggleTag(this)">雀形目</button>
-                <button class="filter-btn" data-type="taxonomy" data-value="carnivora" onclick="toggleTag(this)">食肉目</button>
-                <button class="filter-btn" data-type="taxonomy" data-value="artiodactyla" onclick="toggleTag(this)">偶蹄目</button>
-            </div>
         </div>
 
         <div class="gallery">
@@ -413,8 +672,9 @@ const animals = [
                     class="card animal-card" 
                     data-iucn={item.iucn}
                     data-taxonomy={item.taxonomy}
+                    data-name={item.name}
+                    data-latin-name={item.latinName}
                 >
-                    <!-- 展示第一张照片作为封面，多图时显示数量标签 -->
                     <div class="card-img-wrapper" onclick={`openModal(${index})`}>
                         <img src={item.images[0]} alt={item.name} />
                         {item.images.length > 1 && (
@@ -441,7 +701,7 @@ const animals = [
         </div>
     </main>
 
-    <!-- 多图交互 Modal -->
+    <!-- 重新设计的 Modal HTML 结构 -->
     <div id="image-modal" class="modal-backdrop" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <span class="modal-close" onclick="closeModal()">&times;</span>
@@ -452,7 +712,6 @@ const animals = [
                     <img id="m-img" class="modal-img" src="" alt="" />
                     <button class="nav-btn next-btn" onclick="nextImage(event)">&#10095;</button>
                 </div>
-                <!-- 底部缩略图 -->
                 <div id="m-thumbnails" class="modal-thumbnails"></div>
             </div>
 
@@ -475,41 +734,40 @@ const animals = [
         var rawData = document.getElementById('animals-data').textContent;
         var animals = JSON.parse(rawData);
 
-        // 状态变量
         var currentAnimalIndex = 0;
         var currentImageIndex = 0;
-        var currentFilter = { iucn: 'all', taxonomy: 'all' };
+        var currentFilter = { iucn: 'all', group: 'all', search: '' };
+        var sidebarGroups = {
+            all: [],
+            bird: ['passerine', 'waterbird', 'raptor'],
+            mammal: ['carnivora', 'artiodactyla'],
+            fish: ['fish'],
+            invertebrate: ['invertebrate']
+        };
 
-        // 1. 打开弹窗
         window.openModal = function(animalIdx) {
             currentAnimalIndex = animalIdx;
-            currentImageIndex = 0; // 重置到第 1 张图
+            currentImageIndex = 0;
 
             var item = animals[animalIdx];
             if (!item) return;
 
-            // 填充文本信息
             document.getElementById('m-title').textContent = item.name;
             document.getElementById('m-latin').textContent = item.latinName;
             document.getElementById('m-location').textContent = '📍 观察地点：' + item.location;
             document.getElementById('m-desc').textContent = item.desc;
             document.getElementById('m-exif').textContent = '📷 ' + item.exif;
 
-            // 更新图片与缩略图
             updateGalleryDisplay();
-
             document.getElementById('image-modal').classList.add('open');
         };
 
-        // 切换显示的图片
         function updateGalleryDisplay() {
             var item = animals[currentAnimalIndex];
             var images = item.images || [];
 
-            // 主图更新
             document.getElementById('m-img').src = images[currentImageIndex];
 
-            // 按钮显示控制（如果只有 1 张图则隐藏左右切换按钮）
             var prevBtn = document.querySelector('.prev-btn');
             var nextBtn = document.querySelector('.next-btn');
             if (images.length <= 1) {
@@ -520,7 +778,6 @@ const animals = [
                 nextBtn.style.display = 'block';
             }
 
-            // 渲染缩略图
             var thumbContainer = document.getElementById('m-thumbnails');
             thumbContainer.innerHTML = '';
             
@@ -541,7 +798,6 @@ const animals = [
             }
         }
 
-        // 上一张 / 下一张
         window.prevImage = function(e) {
             if (e) e.stopPropagation();
             var images = animals[currentAnimalIndex].images;
@@ -556,24 +812,69 @@ const animals = [
             updateGalleryDisplay();
         };
 
-        // 2. 关闭弹窗
         window.closeModal = function(e) {
             if (!e || e.target.id === 'image-modal' || e.target.classList.contains('modal-close')) {
                 document.getElementById('image-modal').classList.remove('open');
             }
         };
 
-        // 按键监听：Esc 关闭，左/右方向键切图
         document.addEventListener('keydown', function(e) {
             var modal = document.getElementById('image-modal');
             if (modal.classList.contains('open')) {
                 if (e.key === 'Escape') closeModal();
                 if (e.key === 'ArrowLeft') prevImage();
                 if (e.key === 'ArrowRight') nextImage();
+            } else if (e.key === 'Escape') {
+                closeSidebar();
             }
         });
 
-        // 3. 多条件筛选
+        window.openSidebar = function() {
+            document.getElementById('category-sidebar').classList.add('open');
+            document.getElementById('sidebar-backdrop').classList.add('open');
+        };
+
+        window.closeSidebar = function() {
+            document.getElementById('category-sidebar').classList.remove('open');
+            document.getElementById('sidebar-backdrop').classList.remove('open');
+        };
+
+        window.setSidebarCategory = function(btn) {
+            var value = btn.getAttribute('data-group');
+            var sidebarBtns = document.querySelectorAll('.sidebar-item');
+            sidebarBtns.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            currentFilter.group = value;
+            applyFilters();
+            closeSidebar();
+        };
+
+        window.setSidebarSearch = function(value) {
+            currentFilter.search = value.trim().toLowerCase();
+            applyFilters();
+        };
+
+        function applyFilters() {
+            var cards = document.querySelectorAll('.animal-card');
+            cards.forEach(function(card) {
+                var cardIucn = card.getAttribute('data-iucn');
+                var cardTaxonomy = card.getAttribute('data-taxonomy');
+                var cardName = (card.getAttribute('data-name') || '').toLowerCase();
+                var cardLatinName = (card.getAttribute('data-latin-name') || '').toLowerCase();
+                var groupTaxonomies = sidebarGroups[currentFilter.group] || [];
+
+                var matchIucn = (currentFilter.iucn === 'all' || cardIucn === currentFilter.iucn);
+                var matchGroup = (currentFilter.group === 'all' || groupTaxonomies.indexOf(cardTaxonomy) !== -1);
+                var matchSearch = (
+                    currentFilter.search === '' ||
+                    cardName.indexOf(currentFilter.search) !== -1 ||
+                    cardLatinName.indexOf(currentFilter.search) !== -1
+                );
+
+                card.style.display = (matchIucn && matchGroup && matchSearch) ? 'block' : 'none';
+            });
+        }
+
         window.toggleTag = function(btn) {
             var type = btn.getAttribute('data-type');
             var value = btn.getAttribute('data-value');
@@ -583,20 +884,9 @@ const animals = [
             btn.classList.add('active');
 
             currentFilter[type] = value;
-
-            var cards = document.querySelectorAll('.animal-card');
-            cards.forEach(function(card) {
-                var cardIucn = card.getAttribute('data-iucn');
-                var cardTaxonomy = card.getAttribute('data-taxonomy');
-
-                var matchIucn = (currentFilter.iucn === 'all' || cardIucn === currentFilter.iucn);
-                var matchTaxonomy = (currentFilter.taxonomy === 'all' || cardTaxonomy === currentFilter.taxonomy);
-
-                card.style.display = (matchIucn && matchTaxonomy) ? 'block' : 'none';
-            });
+            applyFilters();
         };
 
-        // 4. 地图初始化
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof L !== 'undefined') {
                 var map = L.map('map').setView([30.65, 104.06], 6);
