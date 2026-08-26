@@ -171,6 +171,13 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             display: none;
         }
 
+        .login-form {
+            display: grid;
+            gap: 14px;
+            margin-top: 22px;
+            max-width: 420px;
+        }
+
         .status {
             border-radius: 8px;
             color: #3d4b41;
@@ -194,13 +201,13 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             color: #a92727;
         }
 
-        .preview-list {
+        :global(.preview-list) {
             display: grid;
             gap: 10px;
             margin-top: 8px;
         }
 
-        .preview-item {
+        :global(.preview-item) {
             align-items: center;
             background: #f8faf9;
             border: 1px solid var(--border-color);
@@ -210,14 +217,14 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             padding: 8px;
         }
 
-        .preview-item img {
+        :global(.preview-item img) {
             aspect-ratio: 1;
             border-radius: 6px;
             object-fit: cover;
             width: 54px;
         }
 
-        .preview-name {
+        :global(.preview-name) {
             color: var(--muted-color);
             font-size: 0.9rem;
             overflow-wrap: anywhere;
@@ -229,13 +236,38 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             margin: 0;
         }
 
-        .records-list {
+        .records-tools {
+            margin-top: 18px;
+        }
+
+        .records-search {
+            position: relative;
+        }
+
+        .records-search::before {
+            color: #6f7f73;
+            content: "⌕";
+            font-size: 1.4rem;
+            left: 13px;
+            line-height: 1;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-52%);
+        }
+
+        .records-search input {
+            background: #fbfdfb;
+            border-radius: 999px;
+            padding-left: 42px;
+        }
+
+        :global(.records-list) {
             display: grid;
             gap: 12px;
             margin-top: 18px;
         }
 
-        .record-item {
+        :global(.record-item) {
             align-items: center;
             border: 1px solid var(--border-color);
             border-radius: 8px;
@@ -245,7 +277,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             padding: 12px;
         }
 
-        .record-thumb {
+        :global(.record-thumb) {
             align-items: center;
             aspect-ratio: 1;
             background: #edf3ef;
@@ -259,31 +291,31 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             width: 72px;
         }
 
-        .record-title {
+        :global(.record-title) {
             font-weight: 900;
             margin: 0 0 4px;
         }
 
-        .record-meta {
+        :global(.record-meta) {
             color: var(--muted-color);
             font-size: 0.9rem;
             margin: 0;
             overflow-wrap: anywhere;
         }
 
-        .record-actions {
+        :global(.record-actions) {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             justify-content: flex-end;
         }
 
-        .record-actions button {
+        :global(.record-actions button) {
             font-size: 0.92rem;
             padding: 9px 12px;
         }
 
-        .empty-state {
+        :global(.empty-state) {
             border: 1px dashed var(--border-color);
             border-radius: 8px;
             color: var(--muted-color);
@@ -302,7 +334,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             }
 
             .panel-heading,
-            .record-item {
+            :global(.record-item) {
                 align-items: stretch;
                 grid-template-columns: 1fr;
             }
@@ -311,11 +343,11 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 flex-direction: column;
             }
 
-            .record-actions {
+            :global(.record-actions) {
                 justify-content: stretch;
             }
 
-            .record-actions button {
+            :global(.record-actions button) {
                 flex: 1;
             }
         }
@@ -325,19 +357,34 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
     <main>
         <div class="topbar">
             <a class="back-link" href="/">返回首页</a>
+            <button id="logout-button" class="secondary-button is-hidden" type="button">退出登录</button>
         </div>
 
+        <section id="login-panel" class="panel">
+            <h1>管理员登录</h1>
+            <p class="subtitle">登录后可以添加、编辑和删除物种记录。</p>
+
+            <form id="login-form" class="login-form">
+                <div class="field">
+                    <label for="login-password">管理密码</label>
+                    <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+                </div>
+
+                <div class="actions">
+                    <button id="login-button" type="submit">登录</button>
+                </div>
+
+                <div id="login-status" class="status"></div>
+            </form>
+        </section>
+
+        <div id="admin-content" class="is-hidden">
         <section class="panel">
             <h1 id="form-title">添加物种记录</h1>
             <p id="form-subtitle" class="subtitle">上传图片后，记录会保存到 Cloudflare R2 和 D1。</p>
 
             <form id="species-form">
                 <div class="form-grid">
-                    <div class="field full">
-                        <label for="admin-token">管理密码</label>
-                        <input id="admin-token" name="adminToken" type="password" autocomplete="current-password" required />
-                    </div>
-
                     <div class="field">
                         <label for="name">中文名</label>
                         <input id="name" name="name" type="text" required />
@@ -425,21 +472,33 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             <div class="panel-heading">
                 <div>
                     <h1>已有记录</h1>
-                    <p class="subtitle">编辑和删除都需要填写正确的管理密码。</p>
+                    <p class="subtitle">编辑和删除需要保持管理员登录状态。</p>
                 </div>
                 <button id="refresh-button" class="secondary-button" type="button">刷新</button>
+            </div>
+            <div class="records-tools">
+                <label class="records-search" for="records-search">
+                    <input id="records-search" type="search" placeholder="搜索中文名或 Latin name" autocomplete="off" />
+                </label>
             </div>
             <div id="records-list" class="records-list">
                 <div class="empty-state">正在读取记录...</div>
             </div>
         </section>
+        </div>
     </main>
 
     <script is:inline define:vars={{ API_BASE_URL }}>
+        var loginPanel = document.getElementById('login-panel');
+        var adminContent = document.getElementById('admin-content');
+        var loginForm = document.getElementById('login-form');
+        var loginPassword = document.getElementById('login-password');
+        var loginButton = document.getElementById('login-button');
+        var loginStatus = document.getElementById('login-status');
+        var logoutButton = document.getElementById('logout-button');
         var form = document.getElementById('species-form');
         var formTitle = document.getElementById('form-title');
         var formSubtitle = document.getElementById('form-subtitle');
-        var tokenInput = document.getElementById('admin-token');
         var imagesInput = document.getElementById('images');
         var imageHint = document.getElementById('image-hint');
         var previewList = document.getElementById('preview-list');
@@ -447,21 +506,20 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         var cancelEditButton = document.getElementById('cancel-edit-button');
         var statusBox = document.getElementById('status');
         var recordsList = document.getElementById('records-list');
+        var recordsSearch = document.getElementById('records-search');
         var refreshButton = document.getElementById('refresh-button');
-        var savedToken = window.localStorage.getItem('wildlifeAdminToken');
         var compressedFiles = [];
         var cachedSpecies = [];
         var editingId = null;
 
-        if (savedToken) {
-            tokenInput.value = savedToken;
-        }
+        checkAuth();
 
-        loadSpeciesRecords();
-
+        loginForm.addEventListener('submit', login);
+        logoutButton.addEventListener('click', logout);
         refreshButton.addEventListener('click', loadSpeciesRecords);
+        recordsSearch.addEventListener('input', renderRecords);
         cancelEditButton.addEventListener('click', function() {
-            resetEditMode(tokenInput.value);
+            resetEditMode();
         });
 
         imagesInput.addEventListener('change', async function() {
@@ -502,7 +560,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         form.addEventListener('reset', function() {
             window.setTimeout(function() {
                 if (editingId !== null) {
-                    resetEditMode(tokenInput.value);
+                    resetEditMode();
                 } else {
                     clearImageState();
                     showStatus('', '');
@@ -517,15 +575,12 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
 
             try {
                 var formData = new FormData(form);
-                var token = String(formData.get('adminToken') || '').trim();
-                window.localStorage.setItem('wildlifeAdminToken', token);
-
                 var uploadedImages = [];
                 var files = compressedFiles.length > 0 ? compressedFiles : Array.from(imagesInput.files || []);
                 var wasEditing = editingId !== null;
 
                 for (var index = 0; index < files.length; index += 1) {
-                    uploadedImages.push(await uploadImage(files[index], token));
+                    uploadedImages.push(await uploadImage(files[index]));
                 }
 
                 var payload = {
@@ -546,8 +601,8 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
 
                 var response = await fetch(API_BASE_URL + (wasEditing ? '/species/' + editingId : '/species'), {
                     method: wasEditing ? 'PUT' : 'POST',
+                    credentials: 'include',
                     headers: {
-                        'authorization': 'Bearer ' + token,
                         'content-type': 'application/json'
                     },
                     body: JSON.stringify(payload)
@@ -558,16 +613,89 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 }
 
                 form.reset();
-                tokenInput.value = token;
-                resetEditMode(token);
+                resetEditMode();
                 await loadSpeciesRecords();
                 showStatus(wasEditing ? '修改成功，首页会读取最新数据。' : '保存成功，记录已经进入 D1。', 'success');
             } catch (error) {
-                showStatus(error.message || '保存失败，请检查密码和网络。', 'error');
+                showStatus(error.message || '保存失败，请检查登录状态和网络。', 'error');
             } finally {
                 submitButton.disabled = false;
             }
         });
+
+        async function checkAuth() {
+            try {
+                var response = await fetch(API_BASE_URL + '/auth/me', {
+                    credentials: 'include'
+                });
+                var data = response.ok ? await response.json() : { authenticated: false };
+                if (data.authenticated) {
+                    showAdmin();
+                } else {
+                    showLogin();
+                }
+            } catch (error) {
+                showLogin();
+            }
+        }
+
+        async function login(event) {
+            event.preventDefault();
+            loginButton.disabled = true;
+            showLoginStatus('正在登录...', '');
+
+            try {
+                var formData = new FormData(loginForm);
+                var password = String(formData.get('password') || '').trim();
+                var response = await fetch(API_BASE_URL + '/auth/login', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ password: password })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await readError(response));
+                }
+
+                loginPassword.value = '';
+                showLoginStatus('', '');
+                showAdmin();
+            } catch (error) {
+                showLoginStatus(error.message || '登录失败，请检查管理密码。', 'error');
+            } finally {
+                loginButton.disabled = false;
+            }
+        }
+
+        async function logout() {
+            logoutButton.disabled = true;
+            try {
+                await fetch(API_BASE_URL + '/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+            } finally {
+                resetEditMode();
+                cachedSpecies = [];
+                recordsList.innerHTML = '<div class="empty-state">正在读取记录...</div>';
+                showLogin();
+                logoutButton.disabled = false;
+            }
+        }
+
+        function showAdmin() {
+            loginPanel.classList.add('is-hidden');
+            adminContent.classList.remove('is-hidden');
+            logoutButton.classList.remove('is-hidden');
+            loadSpeciesRecords();
+        }
+
+        function showLogin() {
+            loginPanel.classList.remove('is-hidden');
+            adminContent.classList.add('is-hidden');
+            logoutButton.classList.add('is-hidden');
+        }
 
         async function loadSpeciesRecords() {
             recordsList.innerHTML = '<div class="empty-state">正在读取记录...</div>';
@@ -598,7 +726,23 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 return;
             }
 
-            cachedSpecies.forEach(function(record) {
+            var keyword = recordsSearch.value.trim().toLowerCase();
+            var visibleSpecies = cachedSpecies.filter(function(record) {
+                if (!keyword) {
+                    return true;
+                }
+
+                return [record.name, record.latinName].some(function(value) {
+                    return String(value || '').toLowerCase().includes(keyword);
+                });
+            });
+
+            if (visibleSpecies.length === 0) {
+                recordsList.appendChild(createEmptyState('没有找到匹配的记录。'));
+                return;
+            }
+
+            visibleSpecies.forEach(function(record) {
                 var item = document.createElement('article');
                 item.className = 'record-item';
 
@@ -677,13 +821,6 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         }
 
         async function deleteRecord(record) {
-            var token = tokenInput.value.trim();
-            if (!token) {
-                showStatus('请先填写管理密码再删除。', 'error');
-                tokenInput.focus();
-                return;
-            }
-
             if (!window.confirm('确认删除“' + (record.name || '这条记录') + '”？对应的 R2 图片也会删除。')) {
                 return;
             }
@@ -694,7 +831,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             try {
                 var response = await fetch(API_BASE_URL + '/species/' + record.id, {
                     method: 'DELETE',
-                    headers: { 'authorization': 'Bearer ' + token }
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
@@ -702,25 +839,25 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 }
 
                 if (editingId === record.id) {
-                    resetEditMode(token);
+                    resetEditMode();
                 }
 
                 await loadSpeciesRecords();
                 showStatus('删除成功。', 'success');
             } catch (error) {
-                showStatus(error.message || '删除失败，请检查管理密码。', 'error');
+                showStatus(error.message || '删除失败，请检查登录状态。', 'error');
             } finally {
                 refreshButton.disabled = false;
             }
         }
 
-        async function uploadImage(file, token) {
+        async function uploadImage(file) {
             var body = new FormData();
             body.append('image', file);
 
             var response = await fetch(API_BASE_URL + '/upload', {
                 method: 'POST',
-                headers: { 'authorization': 'Bearer ' + token },
+                credentials: 'include',
                 body: body
             });
 
@@ -793,10 +930,9 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             return text ? Number(text) : null;
         }
 
-        function resetEditMode(token) {
+        function resetEditMode() {
             editingId = null;
             form.reset();
-            tokenInput.value = token || '';
             formTitle.textContent = '添加物种记录';
             formSubtitle.textContent = '上传图片后，记录会保存到 Cloudflare R2 和 D1。';
             submitButton.textContent = '保存记录';
@@ -830,6 +966,11 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         function showStatus(message, type) {
             statusBox.textContent = message;
             statusBox.className = 'status' + (message ? ' show' : '') + (type ? ' ' + type : '');
+        }
+
+        function showLoginStatus(message, type) {
+            loginStatus.textContent = message;
+            loginStatus.className = 'status' + (message ? ' show' : '') + (type ? ' ' + type : '');
         }
     </script>
 </body>
