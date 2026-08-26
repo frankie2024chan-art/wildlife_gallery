@@ -488,6 +488,11 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                     </div>
 
                     <div class="field">
+                        <label for="shotDate">拍摄日期</label>
+                        <input id="shotDate" name="shotDate" type="date" />
+                    </div>
+
+                    <div class="field">
                         <label for="latitude">纬度</label>
                         <input id="latitude" name="latitude" type="number" step="any" />
                     </div>
@@ -656,6 +661,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                     taxonomy: String(formData.get('taxonomy') || '').trim(),
                     iucn: String(formData.get('iucn') || 'LC').trim(),
                     location: String(formData.get('location') || '').trim(),
+                    shotDate: String(formData.get('shotDate') || '').trim(),
                     latitude: normalizeNumber(formData.get('latitude')),
                     longitude: normalizeNumber(formData.get('longitude')),
                     note: String(formData.get('note') || '').trim(),
@@ -831,7 +837,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
 
                 var meta = document.createElement('p');
                 meta.className = 'record-meta';
-                meta.textContent = [record.latinName, record.location, record.iucn].filter(Boolean).join(' · ');
+                meta.textContent = [record.latinName, record.location, record.shotDate, record.iucn, formatEditedDate(record.updatedAt)].filter(Boolean).join(' · ');
 
                 content.appendChild(title);
                 content.appendChild(meta);
@@ -879,6 +885,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             form.elements.taxonomy.value = normalizeTaxonomyValue(record.taxonomy);
             form.elements.iucn.value = record.iucn || 'LC';
             form.elements.location.value = record.location || '';
+            form.elements.shotDate.value = record.shotDate || '';
             form.elements.latitude.value = record.coordinates ? record.coordinates[0] : '';
             form.elements.longitude.value = record.coordinates ? record.coordinates[1] : '';
             form.elements.note.value = record.note || '';
@@ -897,6 +904,14 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             if (value === 'carnivora') return '食肉目';
             if (value === 'artiodactyla') return '偶蹄目';
             return value || '';
+        }
+
+        function formatEditedDate(value) {
+            if (!value) {
+                return '';
+            }
+
+            return '编辑于 ' + String(value).slice(0, 10);
         }
 
         async function deleteRecord(record) {

@@ -10,6 +10,7 @@ const animals = [
     iucn: "LC",
     groupType: "bird",
     taxonomy: "雀形目",
+    shotDate: "",
     coords: [30.65, 104.06],
     exif: "Sony A7R5 | 600mm | f/4 | 1/2000s | ISO 800",
     images: [
@@ -26,6 +27,7 @@ const animals = [
     iucn: "VU",
     groupType: "mammal",
     taxonomy: "食肉目",
+    shotDate: "",
     coords: [30.98, 103.14],
     exif: "Canon R5 | 400mm | f/2.8 | 1/1000s | ISO 400",
     images: [
@@ -877,6 +879,7 @@ const animals = [
                         <h3 class="card-title">{item.name}</h3>
                         <div class="card-latin">{item.latinName}</div>
                         <div class="card-location">📍 {item.location}</div>
+                        {item.shotDate && <div class="card-location">拍摄日期：{item.shotDate}</div>}
                         <p class="card-desc">{item.desc}</p>
                         <div class="exif-tag">📷 {item.exif}</div>
                     </div>
@@ -942,6 +945,7 @@ const animals = [
                 name: item.name || '',
                 latinName: item.latinName || item.latin_name || '',
                 location: item.location || '',
+                shotDate: item.shotDate || item.shot_date || '',
                 iucn: item.iucn || 'LC',
                 groupType: item.groupType || item.group_type || inferGroupType(item.taxonomy) || 'other',
                 taxonomy: normalizeTaxonomy(item.taxonomy),
@@ -1049,6 +1053,10 @@ const animals = [
                 location.className = 'card-location';
                 location.textContent = item.location ? '📍 ' + item.location : '📍 未填写地点';
 
+                var shotDate = document.createElement('div');
+                shotDate.className = 'card-location';
+                shotDate.textContent = item.shotDate ? '拍摄日期：' + item.shotDate : '';
+
                 var desc = document.createElement('p');
                 desc.className = 'card-desc';
                 desc.textContent = item.desc || '暂无备注';
@@ -1057,6 +1065,9 @@ const animals = [
                 body.appendChild(title);
                 body.appendChild(latin);
                 body.appendChild(location);
+                if (item.shotDate) {
+                    body.appendChild(shotDate);
+                }
                 body.appendChild(desc);
 
                 if (item.exif) {
@@ -1083,7 +1094,7 @@ const animals = [
 
             document.getElementById('m-title').textContent = item.name;
             document.getElementById('m-latin').textContent = item.latinName;
-            document.getElementById('m-location').textContent = '📍 观察地点：' + item.location;
+            document.getElementById('m-location').textContent = '📍 观察地点：' + item.location + (item.shotDate ? ' · 拍摄日期：' + item.shotDate : '');
             document.getElementById('m-desc').textContent = item.desc;
             document.getElementById('m-exif').textContent = '📷 ' + item.exif;
 
