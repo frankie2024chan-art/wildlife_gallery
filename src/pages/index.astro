@@ -348,37 +348,6 @@ const animals = [
             text-align: center;
         }
 
-        :global(.wildlife-marker) {
-            appearance: none;
-            align-items: center;
-            color: #fff;
-            cursor: pointer;
-            display: flex;
-            font-size: 0.76rem;
-            font-weight: 900;
-            height: 42px;
-            justify-content: center;
-            line-height: 1;
-            margin: 0;
-            padding: 0;
-            position: relative;
-            user-select: none;
-            width: 34px;
-            z-index: 20;
-        }
-
-        :global(.wildlife-marker svg) {
-            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.28));
-            inset: 0;
-            position: absolute;
-        }
-
-        :global(.wildlife-marker-count) {
-            position: relative;
-            transform: translateY(-7px);
-            z-index: 1;
-        }
-
         :global(.maplibregl-marker) {
             z-index: 20;
         }
@@ -1376,44 +1345,11 @@ const animals = [
 
             Object.keys(groupedAnimals).forEach(function(key) {
                 var group = groupedAnimals[key];
-                var markerElement = document.createElement('div');
-                markerElement.className = 'wildlife-marker';
-                markerElement.setAttribute('role', 'button');
-                markerElement.setAttribute('tabindex', '0');
-                markerElement.setAttribute('aria-label', group.locationName + ' ' + group.list.length + ' species');
-                markerElement.style.cssText = 'width:34px;height:42px;display:block;position:relative;cursor:pointer;z-index:9999;';
-                markerElement.innerHTML = '<svg viewBox="0 0 34 42" width="34" height="42" aria-hidden="true" style="display:block;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.28));"><path d="M17 41C17 41 31 25.4 31 14.8C31 6.6 24.7 1 17 1C9.3 1 3 6.6 3 14.8C3 25.4 17 41 17 41Z" fill="#2e7d32" stroke="#ffffff" stroke-width="3"/><circle cx="17" cy="15" r="9" fill="#2e7d32"/></svg><span class="wildlife-marker-count" style="position:absolute;top:9px;left:0;width:34px;text-align:center;color:#fff;font-size:14px;font-weight:900;line-height:1;z-index:2;">' + group.list.length + '</span>';
-                markerElement.addEventListener('mousedown', function(event) {
-                    event.stopPropagation();
-                });
-                markerElement.addEventListener('touchstart', function(event) {
-                    event.stopPropagation();
-                });
-
-                function openMarkerPopup(event) {
-                    if (event) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                    mapPopup
-                        .setLngLat([group.coords[1], group.coords[0]])
-                        .setHTML(buildMapPopupHtml(group))
-                        .addTo(wildlifeMap);
-                }
-
-                markerElement.addEventListener('click', openMarkerPopup);
-                markerElement.addEventListener('keydown', function(event) {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                        openMarkerPopup(event);
-                    }
-                });
-
                 var marker = new maplibregl.Marker({
-                    element: markerElement,
-                    anchor: 'center',
-                    offset: [0, -21]
+                    color: '#2e7d32'
                 })
                     .setLngLat([group.coords[1], group.coords[0]])
+                    .setPopup(new maplibregl.Popup({ closeButton: true, closeOnClick: true }).setHTML(buildMapPopupHtml(group)))
                     .addTo(wildlifeMap);
                 mapMarkers.push(marker);
             });
