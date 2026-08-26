@@ -1,6 +1,7 @@
 ---
 const IMAGE_BASE_URL = "https://images.frankiewildlife.bid";
 const API_BASE_URL = "https://api.frankiewildlife.bid";
+const MAPTILER_API_KEY = "MnjoMG1H4ZmrSKPetR8L";
 
 const animals = [
   {
@@ -45,7 +46,7 @@ const animals = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>野生动物观察图鉴与足迹</title>
-    <link rel="stylesheet" href="https://cdn.staticfile.net/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.css" />
     <style>
         :root {
             --primary-color: #2e7d32;
@@ -331,6 +332,55 @@ const animals = [
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             margin-bottom: 30px;
             background: #e5e3df;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .map-fallback {
+            align-items: center;
+            background: #edf3ef;
+            color: #506257;
+            display: flex;
+            font-weight: 800;
+            height: 100%;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        :global(.wildlife-marker) {
+            appearance: none;
+            align-items: center;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            font-size: 0.76rem;
+            font-weight: 900;
+            height: 42px;
+            justify-content: center;
+            line-height: 1;
+            margin: 0;
+            padding: 0;
+            position: relative;
+            user-select: none;
+            width: 34px;
+            z-index: 20;
+        }
+
+        :global(.wildlife-marker svg) {
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.28));
+            inset: 0;
+            position: absolute;
+        }
+
+        :global(.wildlife-marker-count) {
+            position: relative;
+            transform: translateY(-7px);
+            z-index: 1;
+        }
+
+        :global(.maplibregl-marker) {
+            z-index: 20;
         }
 
         /* 筛选面板 */
@@ -965,17 +1015,18 @@ const animals = [
     </div>
 
     <!-- 脚本逻辑 -->
-    <script src="https://cdn.staticfile.net/leaflet/1.9.4/leaflet.js" is:inline></script>
+    <script src="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.js" is:inline></script>
     <script id="animals-data" type="application/json" is:inline set:html={JSON.stringify(animals)}></script>
 
-    <script is:inline define:vars={{ API_BASE_URL }}>
+    <script is:inline define:vars={{ API_BASE_URL, MAPTILER_API_KEY }}>
         var rawData = document.getElementById('animals-data').textContent;
         var animals = JSON.parse(rawData);
 
         var currentAnimalIndex = 0;
         var currentImageIndex = 0;
         var wildlifeMap = null;
-        var markerLayer = null;
+        var mapPopup = null;
+        var mapMarkers = [];
         var currentFilter = { iucn: 'all', group: 'all', search: '' };
         var sidebarGroups = {
             all: 'all',
@@ -1305,9 +1356,12 @@ const animals = [
         }
 
         function renderMapMarkers() {
-            if (!wildlifeMap || !markerLayer) return;
+            if (!wildlifeMap || !wildlifeMap.isStyleLoaded()) return;
 
-            markerLayer.clearLayers();
+            mapMarkers.forEach(function(marker) {
+                marker.remove();
+            });
+            mapMarkers = [];
 
             var groupedAnimals = {};
             animals.forEach(function(item, index) {
@@ -1322,19 +1376,193 @@ const animals = [
 
             Object.keys(groupedAnimals).forEach(function(key) {
                 var group = groupedAnimals[key];
-                var popupHtml = '<div style="max-height:180px; overflow-y:auto; padding-right:5px;">';
-                popupHtml += '<strong style="color:#2e7d32;">📍 ' + escapeHtml(group.locationName) + ' (' + group.list.length + ' 种观察)</strong>';
-                popupHtml += '<hr style="margin:6px 0; border:0; border-top:1px solid #eee;"/>';
-
-                group.list.forEach(function(obj) {
-                    popupHtml += '<div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px;">';
-                    popupHtml += '<span style="font-weight:bold;">' + escapeHtml(obj.item.name) + '</span>';
-                    popupHtml += '<a href="javascript:void(0)" onclick="openModal(' + obj.index + ')" style="color:#2e7d32; text-decoration:none; font-size:12px; background:#f0f4f8; padding:2px 6px; border-radius:4px;">查看相册 &raquo;</a>';
-                    popupHtml += '</div>';
+                var markerElement = document.createElement('div');
+                markerElement.className = 'wildlife-marker';
+                markerElement.setAttribute('role', 'button');
+                markerElement.setAttribute('tabindex', '0');
+                markerElement.setAttribute('aria-label', group.locationName + ' ' + group.list.length + ' species');
+                markerElement.style.cssText = 'width:34px;height:42px;display:block;position:relative;cursor:pointer;z-index:9999;';
+                markerElement.innerHTML = '<svg viewBox="0 0 34 42" width="34" height="42" aria-hidden="true" style="display:block;filter:drop-shadow(0 6px 14px rgba(0,0,0,0.28));"><path d="M17 41C17 41 31 25.4 31 14.8C31 6.6 24.7 1 17 1C9.3 1 3 6.6 3 14.8C3 25.4 17 41 17 41Z" fill="#2e7d32" stroke="#ffffff" stroke-width="3"/><circle cx="17" cy="15" r="9" fill="#2e7d32"/></svg><span class="wildlife-marker-count" style="position:absolute;top:9px;left:0;width:34px;text-align:center;color:#fff;font-size:14px;font-weight:900;line-height:1;z-index:2;">' + group.list.length + '</span>';
+                markerElement.addEventListener('mousedown', function(event) {
+                    event.stopPropagation();
                 });
-                popupHtml += '</div>';
+                markerElement.addEventListener('touchstart', function(event) {
+                    event.stopPropagation();
+                });
 
-                L.marker(group.coords).addTo(markerLayer).bindPopup(popupHtml);
+                function openMarkerPopup(event) {
+                    if (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    mapPopup
+                        .setLngLat([group.coords[1], group.coords[0]])
+                        .setHTML(buildMapPopupHtml(group))
+                        .addTo(wildlifeMap);
+                }
+
+                markerElement.addEventListener('click', openMarkerPopup);
+                markerElement.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        openMarkerPopup(event);
+                    }
+                });
+
+                var marker = new maplibregl.Marker({
+                    element: markerElement,
+                    anchor: 'center',
+                    offset: [0, -21]
+                })
+                    .setLngLat([group.coords[1], group.coords[0]])
+                    .addTo(wildlifeMap);
+                mapMarkers.push(marker);
+            });
+
+            fitMapToMarkers();
+        }
+
+        function fitMapToMarkers() {
+            if (!wildlifeMap || mapMarkers.length === 0 || typeof maplibregl === 'undefined') return;
+
+            var bounds = new maplibregl.LngLatBounds();
+            mapMarkers.forEach(function(marker) {
+                bounds.extend(marker.getLngLat());
+            });
+
+            if (mapMarkers.length === 1) {
+                wildlifeMap.easeTo({
+                    center: mapMarkers[0].getLngLat(),
+                    zoom: Math.max(wildlifeMap.getZoom(), 10),
+                    duration: 400
+                });
+                return;
+            }
+
+            wildlifeMap.fitBounds(bounds, {
+                padding: 60,
+                maxZoom: 10,
+                duration: 500
+            });
+        }
+
+        function buildMapPopupHtml(group) {
+            var popupHtml = '<div style="max-height:180px; overflow-y:auto; padding-right:5px;">';
+            popupHtml += '<strong style="color:#2e7d32;">📍 ' + escapeHtml(group.locationName) + ' (' + group.list.length + ' 种观察)</strong>';
+            popupHtml += '<hr style="margin:6px 0; border:0; border-top:1px solid #eee;"/>';
+
+            group.list.forEach(function(obj) {
+                popupHtml += '<div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px;">';
+                popupHtml += '<span style="font-weight:bold;">' + escapeHtml(obj.item.name) + '</span>';
+                popupHtml += '<a href="javascript:void(0)" onclick="openModal(' + obj.index + ')" style="color:#2e7d32; text-decoration:none; font-size:12px; background:#f0f4f8; padding:2px 6px; border-radius:4px;">查看相册 &raquo;</a>';
+                popupHtml += '</div>';
+            });
+            popupHtml += '</div>';
+            return popupHtml;
+        }
+
+        var mapStyleMode = 'outdoor';
+
+        function mapStyleUrl(mode) {
+            var styleId = mode === 'satellite' ? 'hybrid' : 'outdoor-v2';
+            return 'https://api.maptiler.com/maps/' + styleId + '/style.json?key=' + MAPTILER_API_KEY;
+        }
+
+        function hideBoundaryAndCountryLayers() {
+            var style = wildlifeMap && wildlifeMap.getStyle();
+            if (!style || !Array.isArray(style.layers)) return;
+
+            style.layers.forEach(function(layer) {
+                var id = String(layer.id || '').toLowerCase();
+                var sourceLayer = String(layer['source-layer'] || '').toLowerCase();
+                var textField = layer.layout && layer.layout['text-field'] ? JSON.stringify(layer.layout['text-field']).toLowerCase() : '';
+                var shouldHide = (
+                    id.indexOf('boundary') !== -1 ||
+                    id.indexOf('border') !== -1 ||
+                    id.indexOf('disputed') !== -1 ||
+                    sourceLayer.indexOf('boundary') !== -1 ||
+                    (layer.type === 'symbol' && (
+                        id.indexOf('country') !== -1 ||
+                        textField.indexOf('name:latin') !== -1 && id.indexOf('state') === -1
+                    ))
+                );
+
+                if (shouldHide && wildlifeMap.getLayer(layer.id)) {
+                    wildlifeMap.setLayoutProperty(layer.id, 'visibility', 'none');
+                }
+            });
+        }
+
+        function preferChineseLabels() {
+            var style = wildlifeMap && wildlifeMap.getStyle();
+            if (!style || !Array.isArray(style.layers)) return;
+
+            style.layers.forEach(function(layer) {
+                if (layer.type !== 'symbol' || !wildlifeMap.getLayer(layer.id)) return;
+                var textField = layer.layout && layer.layout['text-field'];
+                if (!textField) return;
+
+                try {
+                    wildlifeMap.setLayoutProperty(layer.id, 'text-field', ['coalesce', ['get', 'name:zh'], ['get', 'name:en'], ['get', 'name']]);
+                } catch (error) {
+                    console.warn('Could not update label language for layer', layer.id, error);
+                }
+            });
+        }
+
+        function applyMapStyleCleanup() {
+            hideBoundaryAndCountryLayers();
+            preferChineseLabels();
+        }
+
+        function addMapStyleToggle() {
+            function StyleToggleControl() {}
+            StyleToggleControl.prototype.onAdd = function(map) {
+                var container = document.createElement('div');
+                container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.title = '切换户外/卫星地图';
+                button.textContent = '卫星';
+                button.addEventListener('click', function() {
+                    mapStyleMode = mapStyleMode === 'outdoor' ? 'satellite' : 'outdoor';
+                    button.textContent = mapStyleMode === 'outdoor' ? '卫星' : '户外';
+                    map.setStyle(mapStyleUrl(mapStyleMode));
+                });
+
+                container.appendChild(button);
+                return container;
+            };
+            StyleToggleControl.prototype.onRemove = function() {};
+            wildlifeMap.addControl(new StyleToggleControl(), 'top-right');
+        }
+
+        function initMap() {
+            var mapElement = document.getElementById('map');
+            if (typeof maplibregl === 'undefined') {
+                mapElement.innerHTML = '<div class="map-fallback">地图组件加载失败。</div>';
+                return;
+            }
+
+            if (!MAPTILER_API_KEY || MAPTILER_API_KEY === 'YOUR_MAPTILER_API_KEY') {
+                mapElement.innerHTML = '<div class="map-fallback">等待填写 MapTiler API Key 后启用无国界线矢量地图。</div>';
+                return;
+            }
+
+            wildlifeMap = new maplibregl.Map({
+                container: 'map',
+                style: mapStyleUrl(mapStyleMode),
+                center: [104.06, 30.65],
+                zoom: 5
+            });
+
+            wildlifeMap.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+            addMapStyleToggle();
+            mapPopup = new maplibregl.Popup({ closeButton: true, closeOnClick: true });
+
+            wildlifeMap.on('style.load', function() {
+                applyMapStyleCleanup();
+                renderMapMarkers();
             });
         }
 
@@ -1355,42 +1583,7 @@ const animals = [
         };
 
         document.addEventListener("DOMContentLoaded", function() {
-            if (typeof L !== 'undefined') {
-                wildlifeMap = L.map('map').setView([30.65, 104.06], 6);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                  maxZoom: 19,
-                  attribution: '&copy; OpenStreetMap'
-                }).addTo(wildlifeMap);
-                markerLayer = L.layerGroup().addTo(wildlifeMap);
-
-                var groupedAnimals = {};
-                animals.forEach(function(item, index) {
-                    if (item.coords && item.coords.length === 2) {
-                        var key = item.coords.join(',');
-                        if (!groupedAnimals[key]) {
-                            groupedAnimals[key] = { coords: item.coords, locationName: item.location, list: [] };
-                        }
-                        groupedAnimals[key].list.push({ item: item, index: index });
-                    }
-                });
-
-                Object.keys(groupedAnimals).forEach(function(key) {
-                    var group = groupedAnimals[key];
-                    var popupHtml = '<div style="max-height:180px; overflow-y:auto; padding-right:5px;">';
-                    popupHtml += '<strong style="color:#2e7d32;">📍 ' + group.locationName + ' (' + group.list.length + ' 种观察）</strong>';
-                    popupHtml += '<hr style="margin:6px 0; border:0; border-top:1px solid #eee;"/>';
-                    
-                    group.list.forEach(function(obj) {
-                        popupHtml += '<div style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; gap:10px;">';
-                        popupHtml += '<span style="font-weight:bold;">' + obj.item.name + '</span>';
-                        popupHtml += '<a href="javascript:void(0)" onclick="openModal(' + obj.index + ')" style="color:#2e7d32; text-decoration:none; font-size:12px; background:#f0f4f8; padding:2px 6px; border-radius:4px;">查看相册 &raquo;</a>';
-                        popupHtml += '</div>';
-                    });
-                    popupHtml += '</div>';
-
-                    L.marker(group.coords).addTo(markerLayer).bindPopup(popupHtml);
-                });
-            }
+            initMap();
         });
 
         document.addEventListener("DOMContentLoaded", function() {
