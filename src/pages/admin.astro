@@ -70,6 +70,17 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             padding: 24px;
         }
 
+        .panel + .panel {
+            margin-top: 18px;
+        }
+
+        .panel-heading {
+            align-items: center;
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
         .form-grid {
             display: grid;
             gap: 18px;
@@ -146,6 +157,20 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             color: #234b27;
         }
 
+        .danger-button {
+            background: #b3261e;
+        }
+
+        .text-button {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: #2e5134;
+        }
+
+        .is-hidden {
+            display: none;
+        }
+
         .status {
             border-radius: 8px;
             color: #3d4b41;
@@ -198,6 +223,75 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             overflow-wrap: anywhere;
         }
 
+        .field-note {
+            color: var(--muted-color);
+            font-size: 0.86rem;
+            margin: 0;
+        }
+
+        .records-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .record-item {
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: grid;
+            gap: 14px;
+            grid-template-columns: 72px minmax(0, 1fr) auto;
+            padding: 12px;
+        }
+
+        .record-thumb {
+            align-items: center;
+            aspect-ratio: 1;
+            background: #edf3ef;
+            border-radius: 7px;
+            color: var(--muted-color);
+            display: grid;
+            font-size: 0.82rem;
+            font-weight: 800;
+            justify-content: center;
+            object-fit: cover;
+            width: 72px;
+        }
+
+        .record-title {
+            font-weight: 900;
+            margin: 0 0 4px;
+        }
+
+        .record-meta {
+            color: var(--muted-color);
+            font-size: 0.9rem;
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .record-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .record-actions button {
+            font-size: 0.92rem;
+            padding: 9px 12px;
+        }
+
+        .empty-state {
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            color: var(--muted-color);
+            font-weight: 700;
+            padding: 18px;
+            text-align: center;
+        }
+
         @media (max-width: 720px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -205,6 +299,24 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
 
             .panel {
                 padding: 18px;
+            }
+
+            .panel-heading,
+            .record-item {
+                align-items: stretch;
+                grid-template-columns: 1fr;
+            }
+
+            .panel-heading {
+                flex-direction: column;
+            }
+
+            .record-actions {
+                justify-content: stretch;
+            }
+
+            .record-actions button {
+                flex: 1;
             }
         }
     </style>
@@ -216,8 +328,8 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         </div>
 
         <section class="panel">
-            <h1>添加物种记录</h1>
-            <p class="subtitle">上传图片后，记录会保存到 Cloudflare R2 和 D1。</p>
+            <h1 id="form-title">添加物种记录</h1>
+            <p id="form-subtitle" class="subtitle">上传图片后，记录会保存到 Cloudflare R2 和 D1。</p>
 
             <form id="species-form">
                 <div class="form-grid">
@@ -294,33 +406,63 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                     <div class="field full">
                         <label for="images">图片</label>
                         <input id="images" name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple />
+                        <p id="image-hint" class="field-note">新增记录时会上传图片；编辑记录时不选新图片则保留原图。</p>
                         <div id="preview-list" class="preview-list"></div>
                     </div>
                 </div>
 
                 <div class="actions">
                     <button id="submit-button" type="submit">保存记录</button>
+                    <button id="cancel-edit-button" class="text-button is-hidden" type="button">取消编辑</button>
                     <button class="secondary-button" type="reset">清空</button>
                 </div>
 
                 <div id="status" class="status"></div>
             </form>
         </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h1>已有记录</h1>
+                    <p class="subtitle">编辑和删除都需要填写正确的管理密码。</p>
+                </div>
+                <button id="refresh-button" class="secondary-button" type="button">刷新</button>
+            </div>
+            <div id="records-list" class="records-list">
+                <div class="empty-state">正在读取记录...</div>
+            </div>
+        </section>
     </main>
 
     <script is:inline define:vars={{ API_BASE_URL }}>
         var form = document.getElementById('species-form');
+        var formTitle = document.getElementById('form-title');
+        var formSubtitle = document.getElementById('form-subtitle');
         var tokenInput = document.getElementById('admin-token');
         var imagesInput = document.getElementById('images');
+        var imageHint = document.getElementById('image-hint');
         var previewList = document.getElementById('preview-list');
         var submitButton = document.getElementById('submit-button');
+        var cancelEditButton = document.getElementById('cancel-edit-button');
         var statusBox = document.getElementById('status');
+        var recordsList = document.getElementById('records-list');
+        var refreshButton = document.getElementById('refresh-button');
         var savedToken = window.localStorage.getItem('wildlifeAdminToken');
         var compressedFiles = [];
+        var cachedSpecies = [];
+        var editingId = null;
 
         if (savedToken) {
             tokenInput.value = savedToken;
         }
+
+        loadSpeciesRecords();
+
+        refreshButton.addEventListener('click', loadSpeciesRecords);
+        cancelEditButton.addEventListener('click', function() {
+            resetEditMode(tokenInput.value);
+        });
 
         imagesInput.addEventListener('change', async function() {
             previewList.innerHTML = '';
@@ -359,9 +501,12 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
 
         form.addEventListener('reset', function() {
             window.setTimeout(function() {
-                previewList.innerHTML = '';
-                compressedFiles = [];
-                showStatus('', '');
+                if (editingId !== null) {
+                    resetEditMode(tokenInput.value);
+                } else {
+                    clearImageState();
+                    showStatus('', '');
+                }
             }, 0);
         });
 
@@ -377,6 +522,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
 
                 var uploadedImages = [];
                 var files = compressedFiles.length > 0 ? compressedFiles : Array.from(imagesInput.files || []);
+                var wasEditing = editingId !== null;
 
                 for (var index = 0; index < files.length; index += 1) {
                     uploadedImages.push(await uploadImage(files[index], token));
@@ -392,11 +538,14 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                     latitude: normalizeNumber(formData.get('latitude')),
                     longitude: normalizeNumber(formData.get('longitude')),
                     note: String(formData.get('note') || '').trim(),
-                    images: uploadedImages
                 };
 
-                var response = await fetch(API_BASE_URL + '/species', {
-                    method: 'POST',
+                if (!wasEditing || uploadedImages.length > 0) {
+                    payload.images = uploadedImages;
+                }
+
+                var response = await fetch(API_BASE_URL + (wasEditing ? '/species/' + editingId : '/species'), {
+                    method: wasEditing ? 'PUT' : 'POST',
                     headers: {
                         'authorization': 'Bearer ' + token,
                         'content-type': 'application/json'
@@ -409,16 +558,161 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 }
 
                 form.reset();
-                previewList.innerHTML = '';
-                compressedFiles = [];
                 tokenInput.value = token;
-                showStatus('保存成功，记录已经进入 D1。', 'success');
+                resetEditMode(token);
+                await loadSpeciesRecords();
+                showStatus(wasEditing ? '修改成功，首页会读取最新数据。' : '保存成功，记录已经进入 D1。', 'success');
             } catch (error) {
                 showStatus(error.message || '保存失败，请检查密码和网络。', 'error');
             } finally {
                 submitButton.disabled = false;
             }
         });
+
+        async function loadSpeciesRecords() {
+            recordsList.innerHTML = '<div class="empty-state">正在读取记录...</div>';
+            refreshButton.disabled = true;
+
+            try {
+                var response = await fetch(API_BASE_URL + '/species');
+                if (!response.ok) {
+                    throw new Error(await readError(response));
+                }
+
+                var data = await response.json();
+                cachedSpecies = Array.isArray(data.species) ? data.species : [];
+                renderRecords();
+            } catch (error) {
+                recordsList.innerHTML = '';
+                recordsList.appendChild(createEmptyState(error.message || '记录读取失败。'));
+            } finally {
+                refreshButton.disabled = false;
+            }
+        }
+
+        function renderRecords() {
+            recordsList.innerHTML = '';
+
+            if (cachedSpecies.length === 0) {
+                recordsList.appendChild(createEmptyState('还没有通过后台新增的记录。'));
+                return;
+            }
+
+            cachedSpecies.forEach(function(record) {
+                var item = document.createElement('article');
+                item.className = 'record-item';
+
+                var thumb;
+                if (record.images && record.images[0]) {
+                    thumb = document.createElement('img');
+                    thumb.alt = record.name || '物种图片';
+                    thumb.src = record.images[0].url;
+                } else {
+                    thumb = document.createElement('div');
+                    thumb.textContent = '无图';
+                }
+                thumb.className = 'record-thumb';
+
+                var content = document.createElement('div');
+                var title = document.createElement('p');
+                title.className = 'record-title';
+                title.textContent = record.name || '未命名物种';
+
+                var meta = document.createElement('p');
+                meta.className = 'record-meta';
+                meta.textContent = [record.latinName, record.location, record.iucn].filter(Boolean).join(' · ');
+
+                content.appendChild(title);
+                content.appendChild(meta);
+
+                var actions = document.createElement('div');
+                actions.className = 'record-actions';
+
+                var editButton = document.createElement('button');
+                editButton.className = 'text-button';
+                editButton.type = 'button';
+                editButton.textContent = '编辑';
+                editButton.addEventListener('click', function() {
+                    startEdit(record);
+                });
+
+                var deleteButton = document.createElement('button');
+                deleteButton.className = 'danger-button';
+                deleteButton.type = 'button';
+                deleteButton.textContent = '删除';
+                deleteButton.addEventListener('click', function() {
+                    deleteRecord(record);
+                });
+
+                actions.appendChild(editButton);
+                actions.appendChild(deleteButton);
+
+                item.appendChild(thumb);
+                item.appendChild(content);
+                item.appendChild(actions);
+                recordsList.appendChild(item);
+            });
+        }
+
+        function startEdit(record) {
+            editingId = record.id;
+            formTitle.textContent = '编辑物种记录';
+            formSubtitle.textContent = '保存修改需要管理密码；不重新选择图片时会保留原图。';
+            submitButton.textContent = '保存修改';
+            cancelEditButton.classList.remove('is-hidden');
+            imageHint.textContent = '如需替换图片，请重新选择；留空则继续使用原图。';
+
+            form.elements.name.value = record.name || '';
+            form.elements.latinName.value = record.latinName || '';
+            form.elements.groupType.value = record.groupType || 'bird';
+            form.elements.taxonomy.value = record.taxonomy || '';
+            form.elements.iucn.value = record.iucn || 'LC';
+            form.elements.location.value = record.location || '';
+            form.elements.latitude.value = record.coordinates ? record.coordinates[0] : '';
+            form.elements.longitude.value = record.coordinates ? record.coordinates[1] : '';
+            form.elements.note.value = record.note || '';
+            clearImageState();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showStatus('正在编辑：' + (record.name || '未命名物种'), '');
+        }
+
+        async function deleteRecord(record) {
+            var token = tokenInput.value.trim();
+            if (!token) {
+                showStatus('请先填写管理密码再删除。', 'error');
+                tokenInput.focus();
+                return;
+            }
+
+            if (!window.confirm('确认删除“' + (record.name || '这条记录') + '”？对应的 R2 图片也会删除。')) {
+                return;
+            }
+
+            refreshButton.disabled = true;
+            showStatus('正在删除...', '');
+
+            try {
+                var response = await fetch(API_BASE_URL + '/species/' + record.id, {
+                    method: 'DELETE',
+                    headers: { 'authorization': 'Bearer ' + token }
+                });
+
+                if (!response.ok) {
+                    throw new Error(await readError(response));
+                }
+
+                if (editingId === record.id) {
+                    resetEditMode(token);
+                }
+
+                await loadSpeciesRecords();
+                showStatus('删除成功。', 'success');
+            } catch (error) {
+                showStatus(error.message || '删除失败，请检查管理密码。', 'error');
+            } finally {
+                refreshButton.disabled = false;
+            }
+        }
 
         async function uploadImage(file, token) {
             var body = new FormData();
@@ -497,6 +791,31 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         function normalizeNumber(value) {
             var text = String(value || '').trim();
             return text ? Number(text) : null;
+        }
+
+        function resetEditMode(token) {
+            editingId = null;
+            form.reset();
+            tokenInput.value = token || '';
+            formTitle.textContent = '添加物种记录';
+            formSubtitle.textContent = '上传图片后，记录会保存到 Cloudflare R2 和 D1。';
+            submitButton.textContent = '保存记录';
+            cancelEditButton.classList.add('is-hidden');
+            imageHint.textContent = '新增记录时会上传图片；编辑记录时不选新图片则保留原图。';
+            clearImageState();
+        }
+
+        function clearImageState() {
+            imagesInput.value = '';
+            previewList.innerHTML = '';
+            compressedFiles = [];
+        }
+
+        function createEmptyState(message) {
+            var state = document.createElement('div');
+            state.className = 'empty-state';
+            state.textContent = message;
+            return state;
         }
 
         async function readError(response) {
