@@ -400,9 +400,20 @@ const animals = [
         .card-img-wrapper {
             position: relative;
             height: 220px;
-            background-color: #eee;
+            background: linear-gradient(110deg, #e8eee9 8%, #f4f7f2 18%, #e8eee9 33%);
+            background-size: 200% 100%;
             cursor: pointer;
             overflow: hidden;
+        }
+
+        .card-img-wrapper::before {
+            animation: image-placeholder-shine 1.3s ease-in-out infinite;
+            background: inherit;
+            content: "";
+            inset: 0;
+            position: absolute;
+            transition: opacity 0.25s ease;
+            z-index: 0;
         }
 
         .card-img-wrapper img {
@@ -410,6 +421,23 @@ const animals = [
             height: 100%;
             display: block;
             object-fit: cover;
+            opacity: 0;
+            position: relative;
+            transition: opacity 0.28s ease;
+            z-index: 1;
+        }
+
+        .card-img-wrapper img.is-loaded {
+            opacity: 1;
+        }
+
+        .card-img-wrapper:has(img.is-loaded)::before {
+            opacity: 0;
+        }
+
+        @keyframes image-placeholder-shine {
+            0% { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
         }
 
         @media (max-width: 650px) {
@@ -442,9 +470,20 @@ const animals = [
         :global(.card-img-wrapper) {
             position: relative;
             height: 220px;
-            background-color: #eee;
+            background: linear-gradient(110deg, #e8eee9 8%, #f4f7f2 18%, #e8eee9 33%);
+            background-size: 200% 100%;
             cursor: pointer;
             overflow: hidden;
+        }
+
+        :global(.card-img-wrapper::before) {
+            animation: image-placeholder-shine 1.3s ease-in-out infinite;
+            background: inherit;
+            content: "";
+            inset: 0;
+            position: absolute;
+            transition: opacity 0.25s ease;
+            z-index: 0;
         }
 
         :global(.card-img-wrapper img) {
@@ -452,6 +491,18 @@ const animals = [
             height: 100%;
             display: block;
             object-fit: cover;
+            opacity: 0;
+            position: relative;
+            transition: opacity 0.28s ease;
+            z-index: 1;
+        }
+
+        :global(.card-img-wrapper img.is-loaded) {
+            opacity: 1;
+        }
+
+        :global(.card-img-wrapper:has(img.is-loaded)::before) {
+            opacity: 0;
         }
 
         :global(.card-placeholder) {
@@ -862,7 +913,7 @@ const animals = [
                     data-latin-name={item.latinName}
                 >
                     <div class="card-img-wrapper" onclick={`openModal(${index})`}>
-                        <img src={item.images[0]} alt={item.name} />
+                        <img src={item.images[0]} alt={item.name} loading="lazy" decoding="async" onload="this.classList.add('is-loaded')" />
                         {item.images.length > 1 && (
                             <span class="img-count-badge">📷 {item.images.length} 张照片</span>
                         )}
@@ -1008,8 +1059,16 @@ const animals = [
 
                 if (item.images && item.images.length > 0) {
                     var img = document.createElement('img');
-                    img.src = item.images[0];
                     img.alt = item.name;
+                    img.loading = 'lazy';
+                    img.decoding = 'async';
+                    img.addEventListener('load', function() {
+                        this.classList.add('is-loaded');
+                    });
+                    img.src = item.images[0];
+                    if (img.complete) {
+                        img.classList.add('is-loaded');
+                    }
                     imageWrapper.appendChild(img);
 
                     if (item.images.length > 1) {
