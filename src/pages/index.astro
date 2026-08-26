@@ -8,7 +8,8 @@ const animals = [
     latinName: "Alcedo atthis",
     location: "四川成都锦江区",
     iucn: "LC",
-    taxonomy: "passerine",
+    groupType: "bird",
+    taxonomy: "雀形目",
     coords: [30.65, 104.06],
     exif: "Sony A7R5 | 600mm | f/4 | 1/2000s | ISO 800",
     images: [
@@ -23,7 +24,8 @@ const animals = [
     latinName: "Ailuropoda melanoleuca",
     location: "四川卧龙自然保护区",
     iucn: "VU",
-    taxonomy: "carnivora",
+    groupType: "mammal",
+    taxonomy: "食肉目",
     coords: [30.98, 103.14],
     exif: "Canon R5 | 400mm | f/2.8 | 1/1000s | ISO 400",
     images: [
@@ -852,6 +854,7 @@ const animals = [
                 <div 
                     class="card animal-card" 
                     data-iucn={item.iucn}
+                    data-group-type={item.groupType}
                     data-taxonomy={item.taxonomy}
                     data-name={item.name}
                     data-latin-name={item.latinName}
@@ -868,7 +871,7 @@ const animals = [
                                 {item.iucn === 'CR' ? '极危 CR' : item.iucn === 'EN' ? '濒危 EN' : item.iucn === 'VU' ? '易危 VU' : item.iucn === 'NT' ? '近危 NT' : '无危 LC'}
                             </span>
                             <span class="tag tag-taxonomy">
-                                {item.taxonomy === 'passerine' ? '雀形目' : item.taxonomy === 'waterbird' ? '游禽/水鸟' : item.taxonomy === 'raptor' ? '猛禽' : item.taxonomy === 'carnivora' ? '食肉目' : item.taxonomy === 'artiodactyla' ? '偶蹄目' : '其他'}
+                                {item.taxonomy || '其他'}
                             </span>
                         </div>
                         <h3 class="card-title">{item.name}</h3>
@@ -921,11 +924,11 @@ const animals = [
         var markerLayer = null;
         var currentFilter = { iucn: 'all', group: 'all', search: '' };
         var sidebarGroups = {
-            all: [],
-            bird: ['bird', 'passerine', 'waterbird', 'raptor'],
-            mammal: ['mammal', 'carnivora', 'artiodactyla'],
-            fish: ['fish'],
-            invertebrate: ['invertebrate']
+            all: 'all',
+            bird: 'bird',
+            mammal: 'mammal',
+            fish: 'fish',
+            invertebrate: 'invertebrate'
         };
 
         function normalizeApiAnimal(item) {
@@ -940,7 +943,8 @@ const animals = [
                 latinName: item.latinName || item.latin_name || '',
                 location: item.location || '',
                 iucn: item.iucn || 'LC',
-                taxonomy: item.taxonomy || item.groupType || item.group_type || 'other',
+                groupType: item.groupType || item.group_type || inferGroupType(item.taxonomy) || 'other',
+                taxonomy: normalizeTaxonomy(item.taxonomy),
                 coords: Array.isArray(item.coordinates) ? item.coordinates : null,
                 exif: item.exif || '',
                 images: imageUrls,
@@ -966,7 +970,19 @@ const animals = [
             if (value === 'mammal') return '兽类';
             if (value === 'fish') return '鱼类';
             if (value === 'invertebrate') return '无脊椎类';
-            return '其他';
+            return value || '其他';
+        }
+
+        function normalizeTaxonomy(value) {
+            return taxonomyLabel(value);
+        }
+
+        function inferGroupType(taxonomy) {
+            if (taxonomy === 'passerine' || taxonomy === 'waterbird' || taxonomy === 'raptor') return 'bird';
+            if (taxonomy === 'carnivora' || taxonomy === 'artiodactyla') return 'mammal';
+            if (taxonomy === 'fish') return 'fish';
+            if (taxonomy === 'invertebrate') return 'invertebrate';
+            return '';
         }
 
         function renderGallery() {
@@ -977,6 +993,7 @@ const animals = [
                 var card = document.createElement('div');
                 card.className = 'card animal-card';
                 card.setAttribute('data-iucn', item.iucn || '');
+                card.setAttribute('data-group-type', item.groupType || '');
                 card.setAttribute('data-taxonomy', item.taxonomy || '');
                 card.setAttribute('data-name', item.name || '');
                 card.setAttribute('data-latin-name', item.latinName || '');
@@ -1179,13 +1196,13 @@ const animals = [
             var cards = document.querySelectorAll('.animal-card');
             cards.forEach(function(card) {
                 var cardIucn = card.getAttribute('data-iucn');
-                var cardTaxonomy = card.getAttribute('data-taxonomy');
+                var cardGroupType = card.getAttribute('data-group-type');
                 var cardName = (card.getAttribute('data-name') || '').toLowerCase();
                 var cardLatinName = (card.getAttribute('data-latin-name') || '').toLowerCase();
-                var groupTaxonomies = sidebarGroups[currentFilter.group] || [];
+                var groupType = sidebarGroups[currentFilter.group] || 'all';
 
                 var matchIucn = (currentFilter.iucn === 'all' || cardIucn === currentFilter.iucn);
-                var matchGroup = (currentFilter.group === 'all' || groupTaxonomies.indexOf(cardTaxonomy) !== -1);
+                var matchGroup = (groupType === 'all' || cardGroupType === groupType);
                 var matchSearch = (
                     currentFilter.search === '' ||
                     cardName.indexOf(currentFilter.search) !== -1 ||

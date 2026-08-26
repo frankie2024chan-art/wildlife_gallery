@@ -212,8 +212,9 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             background: #f8faf9;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            display: flex;
+            display: grid;
             gap: 12px;
+            grid-template-columns: 54px minmax(0, 1fr) auto;
             padding: 8px;
         }
 
@@ -230,10 +231,38 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             overflow-wrap: anywhere;
         }
 
+        :global(.preview-remove) {
+            background: #edf3ef;
+            border: none;
+            border-radius: 7px;
+            color: #34513a;
+            font-size: 0.86rem;
+            padding: 8px 10px;
+        }
+
         .field-note {
             color: var(--muted-color);
             font-size: 0.86rem;
             margin: 0;
+        }
+
+        .location-map {
+            background: #e7ece8;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            height: 320px;
+            overflow: hidden;
+        }
+
+        .location-map-fallback {
+            align-items: center;
+            color: var(--muted-color);
+            display: flex;
+            font-weight: 700;
+            height: 100%;
+            justify-content: center;
+            padding: 18px;
+            text-align: center;
         }
 
         .records-tools {
@@ -409,13 +438,36 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                         <label for="taxonomy">分类标签</label>
                         <select id="taxonomy" name="taxonomy">
                             <option value="">其他</option>
-                            <option value="passerine">雀形目</option>
-                            <option value="waterbird">游禽 / 水鸟</option>
-                            <option value="raptor">猛禽</option>
-                            <option value="carnivora">食肉目</option>
-                            <option value="artiodactyla">偶蹄目</option>
-                            <option value="fish">鱼类</option>
-                            <option value="invertebrate">无脊椎类</option>
+                            <option value="有鳞目">有鳞目</option>
+                            <option value="鲈形目">鲈形目</option>
+                            <option value="无尾目">无尾目</option>
+                            <option value="雀形目">雀形目</option>
+                            <option value="鲤形目">鲤形目</option>
+                            <option value="鲇形目">鲇形目</option>
+                            <option value="脂鲤目">脂鲤目</option>
+                            <option value="啮齿目">啮齿目</option>
+                            <option value="翼手目">翼手目</option>
+                            <option value="虾虎鱼目">虾虎鱼目</option>
+                            <option value="鳉形目">鳉形目</option>
+                            <option value="真盲缺目">真盲缺目</option>
+                            <option value="有尾目">有尾目</option>
+                            <option value="鲉形目">鲉形目</option>
+                            <option value="胡瓜鱼目">胡瓜鱼目</option>
+                            <option value="偶蹄目">偶蹄目</option>
+                            <option value="龟鳖目">龟鳖目</option>
+                            <option value="雨燕目">雨燕目</option>
+                            <option value="鲱形目">鲱形目</option>
+                            <option value="鴷形目">鴷形目</option>
+                            <option value="鸻形目">鸻形目</option>
+                            <option value="鲹形目">鲹形目</option>
+                            <option value="鲆鲽目">鲆鲽目</option>
+                            <option value="鲀形目">鲀形目</option>
+                            <option value="鹦形目">鹦形目</option>
+                            <option value="食肉目">食肉目</option>
+                            <option value="鸽形目">鸽形目</option>
+                            <option value="鹰形目">鹰形目</option>
+                            <option value="鸡形目">鸡形目</option>
+                            <option value="真鲨目">真鲨目</option>
                         </select>
                     </div>
 
@@ -446,6 +498,14 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                     </div>
 
                     <div class="field full">
+                        <label for="location-map">地图选择拍摄地点</label>
+                        <div id="location-map" class="location-map">
+                            <div class="location-map-fallback">登录后加载地图，点击位置会自动填写经纬度。</div>
+                        </div>
+                        <p class="field-note">也可以继续手动输入经纬度，地图标记会同步移动。</p>
+                    </div>
+
+                    <div class="field full">
                         <label for="note">备注</label>
                         <textarea id="note" name="note"></textarea>
                     </div>
@@ -453,7 +513,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                     <div class="field full">
                         <label for="images">图片</label>
                         <input id="images" name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple />
-                        <p id="image-hint" class="field-note">新增记录时会上传图片；编辑记录时不选新图片则保留原图。</p>
+                        <p id="image-hint" class="field-note">可以一次选择多张，也可以分多次继续添加。</p>
                         <div id="preview-list" class="preview-list"></div>
                     </div>
                 </div>
@@ -501,6 +561,9 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         var formSubtitle = document.getElementById('form-subtitle');
         var imagesInput = document.getElementById('images');
         var imageHint = document.getElementById('image-hint');
+        var latitudeInput = document.getElementById('latitude');
+        var longitudeInput = document.getElementById('longitude');
+        var locationMapElement = document.getElementById('location-map');
         var previewList = document.getElementById('preview-list');
         var submitButton = document.getElementById('submit-button');
         var cancelEditButton = document.getElementById('cancel-edit-button');
@@ -508,9 +571,13 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         var recordsList = document.getElementById('records-list');
         var recordsSearch = document.getElementById('records-search');
         var refreshButton = document.getElementById('refresh-button');
-        var compressedFiles = [];
+        var selectedImages = [];
         var cachedSpecies = [];
         var editingId = null;
+        var locationMap = null;
+        var locationMarker = null;
+        var leafletLoader = null;
+        var defaultMapCenter = [30.65, 104.06];
 
         checkAuth();
 
@@ -521,10 +588,10 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         cancelEditButton.addEventListener('click', function() {
             resetEditMode();
         });
+        latitudeInput.addEventListener('change', syncMapFromInputs);
+        longitudeInput.addEventListener('change', syncMapFromInputs);
 
         imagesInput.addEventListener('change', async function() {
-            previewList.innerHTML = '';
-            compressedFiles = [];
             var files = Array.from(imagesInput.files || []);
 
             if (files.length > 0) {
@@ -534,27 +601,20 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             for (var index = 0; index < files.length; index += 1) {
                 var file = files[index];
                 var compressedFile = await compressImage(file);
-                compressedFiles.push(compressedFile);
-
-                var item = document.createElement('div');
-                item.className = 'preview-item';
-
-                var img = document.createElement('img');
-                img.src = URL.createObjectURL(compressedFile);
-                img.alt = compressedFile.name;
-
-                var name = document.createElement('div');
-                name.className = 'preview-name';
-                name.textContent = compressedFile.name + ' · ' + formatFileSize(file.size) + ' → ' + formatFileSize(compressedFile.size);
-
-                item.appendChild(img);
-                item.appendChild(name);
-                previewList.appendChild(item);
+                selectedImages.push({
+                    id: Date.now() + '-' + index + '-' + file.name,
+                    originalFile: file,
+                    compressedFile: compressedFile,
+                    previewUrl: URL.createObjectURL(compressedFile)
+                });
             }
 
             if (files.length > 0) {
-                showStatus('图片已压缩，提交时会上传压缩后的版本。', 'success');
+                renderSelectedImages();
+                showStatus('已添加 ' + selectedImages.length + ' 张图片，提交时会上传压缩后的版本。', 'success');
             }
+
+            imagesInput.value = '';
         });
 
         form.addEventListener('reset', function() {
@@ -576,11 +636,17 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             try {
                 var formData = new FormData(form);
                 var uploadedImages = [];
-                var files = compressedFiles.length > 0 ? compressedFiles : Array.from(imagesInput.files || []);
+                var files = selectedImages.map(function(image) {
+                    return image.compressedFile;
+                });
                 var wasEditing = editingId !== null;
+                var uploadMeta = {
+                    name: String(formData.get('name') || '').trim(),
+                    latinName: String(formData.get('latinName') || '').trim()
+                };
 
                 for (var index = 0; index < files.length; index += 1) {
-                    uploadedImages.push(await uploadImage(files[index]));
+                    uploadedImages.push(await uploadImage(files[index], uploadMeta));
                 }
 
                 var payload = {
@@ -689,6 +755,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             adminContent.classList.remove('is-hidden');
             logoutButton.classList.remove('is-hidden');
             loadSpeciesRecords();
+            initLocationMap();
         }
 
         function showLogin() {
@@ -804,20 +871,32 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             formSubtitle.textContent = '保存修改需要管理密码；不重新选择图片时会保留原图。';
             submitButton.textContent = '保存修改';
             cancelEditButton.classList.remove('is-hidden');
-            imageHint.textContent = '如需替换图片，请重新选择；留空则继续使用原图。';
+            imageHint.textContent = '可以一次选择多张，也可以分多次继续添加；留空则继续使用原图。';
 
             form.elements.name.value = record.name || '';
             form.elements.latinName.value = record.latinName || '';
             form.elements.groupType.value = record.groupType || 'bird';
-            form.elements.taxonomy.value = record.taxonomy || '';
+            form.elements.taxonomy.value = normalizeTaxonomyValue(record.taxonomy);
             form.elements.iucn.value = record.iucn || 'LC';
             form.elements.location.value = record.location || '';
             form.elements.latitude.value = record.coordinates ? record.coordinates[0] : '';
             form.elements.longitude.value = record.coordinates ? record.coordinates[1] : '';
             form.elements.note.value = record.note || '';
             clearImageState();
+            if (record.coordinates) {
+                setMapLocation(record.coordinates[0], record.coordinates[1], true);
+            } else {
+                clearMapLocation();
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
             showStatus('正在编辑：' + (record.name || '未命名物种'), '');
+        }
+
+        function normalizeTaxonomyValue(value) {
+            if (value === 'passerine') return '雀形目';
+            if (value === 'carnivora') return '食肉目';
+            if (value === 'artiodactyla') return '偶蹄目';
+            return value || '';
         }
 
         async function deleteRecord(record) {
@@ -851,9 +930,11 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             }
         }
 
-        async function uploadImage(file) {
+        async function uploadImage(file, meta) {
             var body = new FormData();
             body.append('image', file);
+            body.append('latinName', meta.latinName || '');
+            body.append('name', meta.name || '');
 
             var response = await fetch(API_BASE_URL + '/upload', {
                 method: 'POST',
@@ -937,14 +1018,163 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             formSubtitle.textContent = '上传图片后，记录会保存到 Cloudflare R2 和 D1。';
             submitButton.textContent = '保存记录';
             cancelEditButton.classList.add('is-hidden');
-            imageHint.textContent = '新增记录时会上传图片；编辑记录时不选新图片则保留原图。';
+            imageHint.textContent = '可以一次选择多张，也可以分多次继续添加。';
             clearImageState();
+            clearMapLocation();
+        }
+
+        async function initLocationMap() {
+            try {
+                await loadLeaflet();
+                if (locationMap || typeof L === 'undefined') {
+                    if (locationMap) {
+                        window.setTimeout(function() {
+                            locationMap.invalidateSize();
+                        }, 0);
+                    }
+                    return;
+                }
+
+                locationMapElement.innerHTML = '';
+                locationMap = L.map('location-map').setView(defaultMapCenter, 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap'
+                }).addTo(locationMap);
+
+                locationMap.on('click', function(event) {
+                    setMapLocation(event.latlng.lat, event.latlng.lng, false);
+                });
+
+                syncMapFromInputs();
+                window.setTimeout(function() {
+                    locationMap.invalidateSize();
+                }, 0);
+            } catch (error) {
+                locationMapElement.innerHTML = '<div class="location-map-fallback">地图加载失败，请先手动输入经纬度。</div>';
+            }
+        }
+
+        function loadLeaflet() {
+            if (window.L) {
+                return Promise.resolve();
+            }
+
+            if (leafletLoader) {
+                return leafletLoader;
+            }
+
+            leafletLoader = new Promise(function(resolve, reject) {
+                var stylesheet = document.createElement('link');
+                stylesheet.rel = 'stylesheet';
+                stylesheet.href = 'https://cdn.staticfile.net/leaflet/1.9.4/leaflet.css';
+                document.head.appendChild(stylesheet);
+
+                var script = document.createElement('script');
+                script.src = 'https://cdn.staticfile.net/leaflet/1.9.4/leaflet.js';
+                script.onload = function() { resolve(); };
+                script.onerror = function() { reject(new Error('Leaflet failed to load')); };
+                document.head.appendChild(script);
+            });
+
+            return leafletLoader;
+        }
+
+        function syncMapFromInputs() {
+            var latitude = normalizeNumber(latitudeInput.value);
+            var longitude = normalizeNumber(longitudeInput.value);
+
+            if (latitude === null || longitude === null) {
+                return;
+            }
+
+            setMapLocation(latitude, longitude, true);
+        }
+
+        function setMapLocation(latitude, longitude, keepZoom) {
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                return;
+            }
+
+            latitudeInput.value = latitude.toFixed(6);
+            longitudeInput.value = longitude.toFixed(6);
+
+            if (!locationMap || typeof L === 'undefined') {
+                return;
+            }
+
+            var latLng = [latitude, longitude];
+            if (!locationMarker) {
+                locationMarker = L.marker(latLng).addTo(locationMap);
+            } else {
+                locationMarker.setLatLng(latLng);
+            }
+
+            if (keepZoom) {
+                locationMap.setView(latLng, Math.max(locationMap.getZoom(), 10));
+            } else {
+                locationMap.panTo(latLng);
+            }
+        }
+
+        function clearMapLocation() {
+            if (locationMarker && locationMap) {
+                locationMap.removeLayer(locationMarker);
+                locationMarker = null;
+            }
+        }
+
+        function renderSelectedImages() {
+            previewList.innerHTML = '';
+
+            selectedImages.forEach(function(selectedImage) {
+                var item = document.createElement('div');
+                item.className = 'preview-item';
+
+                var img = document.createElement('img');
+                img.src = selectedImage.previewUrl;
+                img.alt = selectedImage.compressedFile.name;
+
+                var name = document.createElement('div');
+                name.className = 'preview-name';
+                name.textContent = selectedImage.compressedFile.name + ' · ' + formatFileSize(selectedImage.originalFile.size) + ' → ' + formatFileSize(selectedImage.compressedFile.size);
+
+                var removeButton = document.createElement('button');
+                removeButton.className = 'preview-remove';
+                removeButton.type = 'button';
+                removeButton.textContent = '移除';
+                removeButton.addEventListener('click', function() {
+                    removeSelectedImage(selectedImage.id);
+                });
+
+                item.appendChild(img);
+                item.appendChild(name);
+                item.appendChild(removeButton);
+                previewList.appendChild(item);
+            });
+        }
+
+        function removeSelectedImage(id) {
+            var nextImages = [];
+            selectedImages.forEach(function(selectedImage) {
+                if (selectedImage.id === id) {
+                    URL.revokeObjectURL(selectedImage.previewUrl);
+                } else {
+                    nextImages.push(selectedImage);
+                }
+            });
+            selectedImages = nextImages;
+            renderSelectedImages();
+            showStatus(selectedImages.length > 0 ? '已添加 ' + selectedImages.length + ' 张图片。' : '', '');
         }
 
         function clearImageState() {
             imagesInput.value = '';
             previewList.innerHTML = '';
-            compressedFiles = [];
+            selectedImages.forEach(function(selectedImage) {
+                URL.revokeObjectURL(selectedImage.previewUrl);
+            });
+            selectedImages = [];
         }
 
         function createEmptyState(message) {
