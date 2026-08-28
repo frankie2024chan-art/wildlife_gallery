@@ -246,6 +246,17 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             margin: 0;
         }
 
+        .location-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .location-actions button {
+            font-size: 0.92rem;
+            padding: 10px 12px;
+        }
+
         .location-map {
             background: #e7ece8;
             border: 1px solid var(--border-color);
@@ -296,6 +307,12 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             margin-top: 18px;
         }
 
+        :global(.location-list) {
+            display: grid;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
         :global(.record-item) {
             align-items: center;
             border: 1px solid var(--border-color);
@@ -303,6 +320,16 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             display: grid;
             gap: 14px;
             grid-template-columns: 72px minmax(0, 1fr) auto;
+            padding: 12px;
+        }
+
+        :global(.location-item) {
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: grid;
+            gap: 14px;
+            grid-template-columns: minmax(0, 1fr) auto;
             padding: 12px;
         }
 
@@ -370,7 +397,8 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             }
 
             .panel-heading,
-            :global(.record-item) {
+            :global(.record-item),
+            :global(.location-item) {
                 align-items: stretch;
                 grid-template-columns: 1fr;
             }
@@ -495,6 +523,13 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                     </div>
 
                     <div class="field">
+                        <label for="location-id">使用已有地点</label>
+                        <select id="location-id" name="locationId">
+                            <option value="">不绑定地点</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
                         <label for="shotDate">拍摄日期</label>
                         <input id="shotDate" name="shotDate" type="date" />
                     </div>
@@ -515,6 +550,9 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                             <div class="location-map-fallback">登录后加载地图，点击位置会自动填写经纬度。</div>
                         </div>
                         <p class="field-note">也可以继续手动输入经纬度，地图标记会同步移动。</p>
+                        <div class="location-actions">
+                            <button id="save-location-button" class="secondary-button" type="button">保存当前地点</button>
+                        </div>
                     </div>
 
                     <div class="field full">
@@ -538,6 +576,18 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
 
                 <div id="status" class="status"></div>
             </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel-heading">
+                <div>
+                    <h1>地点管理</h1>
+                    <p class="subtitle">常用地点保存后，多个物种可以共用同一个地图图钉。</p>
+                </div>
+            </div>
+            <div id="location-list" class="location-list">
+                <div class="empty-state">正在读取地点...</div>
+            </div>
         </section>
 
         <section class="panel">
@@ -576,6 +626,9 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         var formSubtitle = document.getElementById('form-subtitle');
         var imagesInput = document.getElementById('images');
         var imageHint = document.getElementById('image-hint');
+        var locationInput = document.getElementById('location');
+        var locationIdInput = document.getElementById('location-id');
+        var saveLocationButton = document.getElementById('save-location-button');
         var latitudeInput = document.getElementById('latitude');
         var longitudeInput = document.getElementById('longitude');
         var locationMapElement = document.getElementById('location-map');
@@ -585,11 +638,15 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         var statusBox = document.getElementById('status');
         var recordsList = document.getElementById('records-list');
         var recordsSearch = document.getElementById('records-search');
+        var locationList = document.getElementById('location-list');
         var exportButton = document.getElementById('export-button');
         var refreshButton = document.getElementById('refresh-button');
         var selectedImages = [];
         var cachedSpecies = [];
+        var cachedLocations = [];
         var editingId = null;
+        var editingLocationId = null;
+        var isApplyingLocation = false;
         var locationMap = null;
         var locationMarker = null;
         var leafletLoader = null;
@@ -602,9 +659,14 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         refreshButton.addEventListener('click', loadSpeciesRecords);
         exportButton.addEventListener('click', exportBackup);
         recordsSearch.addEventListener('input', renderRecords);
+        locationIdInput.addEventListener('change', applySelectedLocation);
+        saveLocationButton.addEventListener('click', saveCurrentLocation);
         cancelEditButton.addEventListener('click', function() {
             resetEditMode();
         });
+        locationInput.addEventListener('input', clearSelectedLocationFromManualEdit);
+        latitudeInput.addEventListener('input', clearSelectedLocationFromManualEdit);
+        longitudeInput.addEventListener('input', clearSelectedLocationFromManualEdit);
         latitudeInput.addEventListener('change', syncMapFromInputs);
         longitudeInput.addEventListener('change', syncMapFromInputs);
 
@@ -680,6 +742,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                     taxonomy: String(formData.get('taxonomy') || '').trim(),
                     iucn: String(formData.get('iucn') || 'LC').trim(),
                     location: String(formData.get('location') || '').trim(),
+                    locationId: normalizeLocationId(formData.get('locationId')),
                     shotDate: String(formData.get('shotDate') || '').trim(),
                     latitude: normalizeNumber(formData.get('latitude')),
                     longitude: normalizeNumber(formData.get('longitude')),
@@ -779,6 +842,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             loginPanel.classList.add('is-hidden');
             adminContent.classList.remove('is-hidden');
             logoutButton.classList.remove('is-hidden');
+            loadLocations();
             loadSpeciesRecords();
             initLocationMap();
         }
@@ -808,6 +872,249 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             } finally {
                 refreshButton.disabled = false;
             }
+        }
+
+        async function loadLocations() {
+            try {
+                var response = await fetch(API_BASE_URL + '/locations');
+                if (!response.ok) {
+                    throw new Error(await readError(response));
+                }
+
+                var data = await response.json();
+                cachedLocations = Array.isArray(data.locations) ? data.locations : [];
+                renderLocationOptions();
+                renderLocations();
+            } catch (error) {
+                cachedLocations = [];
+                renderLocationOptions();
+                renderLocations();
+                showStatus(error.message || '地点读取失败，可以继续手动填写地点。', 'error');
+            }
+        }
+
+        function renderLocationOptions() {
+            var currentValue = locationIdInput.value;
+            locationIdInput.innerHTML = '<option value="">不绑定地点</option>';
+
+            cachedLocations.forEach(function(location) {
+                var option = document.createElement('option');
+                option.value = String(location.id);
+                option.textContent = location.name + (location.coordinates ? ' · ' + location.coordinates.join(', ') : '');
+                locationIdInput.appendChild(option);
+            });
+
+            locationIdInput.value = cachedLocations.some(function(location) {
+                return String(location.id) === currentValue;
+            }) ? currentValue : '';
+        }
+
+        function ensureLocationOption(locationId, label) {
+            if (!locationId) {
+                return;
+            }
+
+            var value = String(locationId);
+            if (locationIdInput.querySelector('option[value="' + value.replace(/"/g, '\\"') + '"]')) {
+                return;
+            }
+
+            var option = document.createElement('option');
+            option.value = value;
+            option.textContent = label ? label + ' · 已绑定地点' : '已绑定地点 #' + value;
+            locationIdInput.appendChild(option);
+        }
+
+        function renderLocations() {
+            locationList.innerHTML = '';
+
+            if (cachedLocations.length === 0) {
+                locationList.appendChild(createEmptyState('还没有保存地点。先填写地点和经纬度，再点击“保存当前地点”。'));
+                return;
+            }
+
+            cachedLocations.forEach(function(location) {
+                var item = document.createElement('article');
+                item.className = 'location-item';
+
+                var content = document.createElement('div');
+                var title = document.createElement('p');
+                title.className = 'record-title';
+                title.textContent = location.name || '未命名地点';
+
+                var meta = document.createElement('p');
+                meta.className = 'record-meta';
+                meta.textContent = location.coordinates ? location.coordinates.join(', ') : '未设置经纬度';
+
+                content.appendChild(title);
+                content.appendChild(meta);
+
+                var actions = document.createElement('div');
+                actions.className = 'record-actions';
+
+                var useButton = document.createElement('button');
+                useButton.className = 'secondary-button';
+                useButton.type = 'button';
+                useButton.textContent = '使用';
+                useButton.addEventListener('click', function() {
+                    useLocation(location);
+                });
+
+                var editButton = document.createElement('button');
+                editButton.className = 'text-button';
+                editButton.type = 'button';
+                editButton.textContent = '编辑';
+                editButton.addEventListener('click', function() {
+                    editLocation(location);
+                });
+
+                var deleteButton = document.createElement('button');
+                deleteButton.className = 'danger-button';
+                deleteButton.type = 'button';
+                deleteButton.textContent = '删除';
+                deleteButton.addEventListener('click', function() {
+                    deleteLocation(location);
+                });
+
+                actions.appendChild(useButton);
+                actions.appendChild(editButton);
+                actions.appendChild(deleteButton);
+                item.appendChild(content);
+                item.appendChild(actions);
+                locationList.appendChild(item);
+            });
+        }
+
+        function useLocation(location) {
+            locationIdInput.value = String(location.id);
+            applySelectedLocation();
+        }
+
+        function editLocation(location) {
+            editingLocationId = location.id;
+            isApplyingLocation = true;
+            locationInput.value = location.name || '';
+            locationIdInput.value = String(location.id);
+            if (location.coordinates) {
+                setMapLocation(location.coordinates[0], location.coordinates[1], true);
+            }
+            isApplyingLocation = false;
+            saveLocationButton.textContent = '保存地点修改';
+            showStatus('正在编辑地点：' + (location.name || '未命名地点'), '');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function applySelectedLocation() {
+            var selectedId = normalizeLocationId(locationIdInput.value);
+            if (selectedId === null) {
+                return;
+            }
+
+            var selectedLocation = cachedLocations.find(function(location) {
+                return Number(location.id) === selectedId;
+            });
+            if (!selectedLocation) {
+                return;
+            }
+
+            isApplyingLocation = true;
+            locationInput.value = selectedLocation.name || '';
+            if (selectedLocation.coordinates) {
+                setMapLocation(selectedLocation.coordinates[0], selectedLocation.coordinates[1], true);
+            }
+            isApplyingLocation = false;
+            showStatus('已使用地点：' + selectedLocation.name, 'success');
+        }
+
+        async function saveCurrentLocation() {
+            var name = locationInput.value.trim();
+            var latitude = normalizeNumber(latitudeInput.value);
+            var longitude = normalizeNumber(longitudeInput.value);
+
+            if (!name) {
+                showStatus('请先填写拍摄地点名称。', 'error');
+                return;
+            }
+
+            if (latitude === null || longitude === null) {
+                showStatus('请先填写经纬度，或在地图上点击地点。', 'error');
+                return;
+            }
+
+            saveLocationButton.disabled = true;
+            showStatus('正在保存地点...', '');
+
+            try {
+                var response = await fetch(API_BASE_URL + (editingLocationId ? '/locations/' + editingLocationId : '/locations'), {
+                    method: editingLocationId ? 'PUT' : 'POST',
+                    credentials: 'include',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        latitude: latitude,
+                        longitude: longitude,
+                        note: ''
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await readError(response));
+                }
+
+                var data = await response.json();
+                var savedLocationId = editingLocationId || (data.location && data.location.id);
+                editingLocationId = null;
+                saveLocationButton.textContent = '保存当前地点';
+                await loadLocations();
+                if (savedLocationId) {
+                    locationIdInput.value = String(savedLocationId);
+                }
+                showStatus('地点已保存，以后可以直接选择。', 'success');
+            } catch (error) {
+                showStatus(error.message || '地点保存失败，请检查登录状态。', 'error');
+            } finally {
+                saveLocationButton.disabled = false;
+            }
+        }
+
+        async function deleteLocation(location) {
+            if (!window.confirm('确认删除地点“' + (location.name || '这个地点') + '”？物种记录会保留，但会解除地点绑定。')) {
+                return;
+            }
+
+            showStatus('正在删除地点...', '');
+
+            try {
+                var response = await fetch(API_BASE_URL + '/locations/' + location.id, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error(await readError(response));
+                }
+
+                if (String(locationIdInput.value) === String(location.id)) {
+                    locationIdInput.value = '';
+                }
+                if (editingLocationId === location.id) {
+                    editingLocationId = null;
+                    saveLocationButton.textContent = '保存当前地点';
+                }
+
+                await loadLocations();
+                await loadSpeciesRecords();
+                showStatus('地点已删除，相关物种记录仍然保留。', 'success');
+            } catch (error) {
+                showStatus(error.message || '地点删除失败，请检查登录状态。', 'error');
+            }
+        }
+
+        function clearSelectedLocationFromManualEdit() {
+            if (isApplyingLocation) {
+                return;
+            }
+            locationIdInput.value = '';
         }
 
         async function exportBackup() {
@@ -934,6 +1241,8 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             form.elements.taxonomy.value = normalizeTaxonomyValue(record.taxonomy);
             form.elements.iucn.value = record.iucn || 'LC';
             form.elements.location.value = record.location || '';
+            ensureLocationOption(record.locationId, record.location);
+            form.elements.locationId.value = record.locationId ? String(record.locationId) : '';
             form.elements.shotDate.value = record.shotDate || '';
             form.elements.latitude.value = record.coordinates ? record.coordinates[0] : '';
             form.elements.longitude.value = record.coordinates ? record.coordinates[1] : '';
@@ -1102,6 +1411,15 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             return text ? Number(text) : null;
         }
 
+        function normalizeLocationId(value) {
+            var text = String(value || '').trim();
+            if (!text) {
+                return null;
+            }
+            var number = Number(text);
+            return Number.isSafeInteger(number) && number > 0 ? number : null;
+        }
+
         function resetEditMode() {
             editingId = null;
             form.reset();
@@ -1112,6 +1430,9 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             imageHint.textContent = '可以一次选择多张，也可以分多次继续添加。';
             clearImageState();
             clearMapLocation();
+            locationIdInput.value = '';
+            editingLocationId = null;
+            saveLocationButton.textContent = '保存当前地点';
         }
 
         async function initLocationMap() {
