@@ -3,41 +3,7 @@ const IMAGE_BASE_URL = "https://images.frankiewildlife.bid";
 const API_BASE_URL = "https://api.frankiewildlife.bid";
 const MAPTILER_API_KEY = "MnjoMG1H4ZmrSKPetR8L";
 
-const animals = [
-  {
-    name: "普通翠鸟",
-    latinName: "Alcedo atthis",
-    location: "四川成都锦江区",
-    iucn: "LC",
-    groupType: "bird",
-    taxonomy: "雀形目",
-    shotDate: "",
-    coords: [30.65, 104.06],
-    exif: "Sony A7R5 | 600mm | f/4 | 1/2000s | ISO 800",
-    images: [
-      `${IMAGE_BASE_URL}/kingfisher-1.jpg`,
-      `${IMAGE_BASE_URL}/kingfisher-2.jpg`,
-      `${IMAGE_BASE_URL}/kingfisher-3.jpg`
-    ],
-    desc: "清晨在岸边捕食小鱼的翠鸟，羽毛呈金属般的绚丽蓝色。"
-  },
-  {
-    name: "大熊猫",
-    latinName: "Ailuropoda melanoleuca",
-    location: "四川卧龙自然保护区",
-    iucn: "VU",
-    groupType: "mammal",
-    taxonomy: "食肉目",
-    shotDate: "",
-    coords: [30.98, 103.14],
-    exif: "Canon R5 | 400mm | f/2.8 | 1/1000s | ISO 400",
-    images: [
-      `${IMAGE_BASE_URL}/DSCF4409.JPG`,
-      `${IMAGE_BASE_URL}/DSCF4414.JPG`
-    ],
-    desc: "竹林间偶遇正在享用早餐的大熊猫，憨态可掬。"
-  }
-];
+const animals = [];
 ---
 
 <!DOCTYPE html>
@@ -110,7 +76,8 @@ const animals = [
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.32);
+            background: rgba(17, 26, 20, 0.34);
+            backdrop-filter: blur(2px);
             z-index: 1100;
         }
 
@@ -122,15 +89,17 @@ const animals = [
             position: fixed;
             top: 0;
             left: 0;
-            width: min(280px, 82vw);
+            width: min(320px, 86vw);
             height: 100vh;
-            background: #fff;
-            box-shadow: 8px 0 24px rgba(0,0,0,0.18);
+            background: linear-gradient(180deg, #ffffff 0%, #f7faf7 100%);
+            box-shadow: 10px 0 32px rgba(20, 38, 25, 0.18);
             z-index: 1300;
             transform: translateX(-100%);
-            transition: transform 0.24s ease;
-            padding: 22px;
+            transition: transform 0.26s ease;
+            padding: 24px 20px;
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar.open {
@@ -139,39 +108,56 @@ const animals = [
 
         .sidebar-header {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
-            margin-bottom: 18px;
+            gap: 16px;
+            margin-bottom: 22px;
         }
 
         .sidebar-title {
             margin: 0;
             color: var(--primary-color);
-            font-size: 1.1rem;
+            font-size: 1.35rem;
+            letter-spacing: 0;
+            line-height: 1.2;
+        }
+
+        .sidebar-subtitle {
+            color: #6d7b70;
+            font-size: 0.82rem;
+            font-weight: 650;
+            margin: 6px 0 0;
         }
 
         .sidebar-close {
             width: 32px;
             height: 32px;
             border: none;
-            border-radius: 8px;
-            background: #eef3ef;
-            color: #234b27;
+            border-radius: 50%;
+            background: #eef5ef;
+            color: #244b2b;
             cursor: pointer;
             font-size: 20px;
             line-height: 1;
+            flex: 0 0 auto;
+            transition: background 0.18s ease, transform 0.18s ease;
+        }
+
+        .sidebar-close:hover {
+            background: #dcebdd;
+            transform: rotate(90deg);
         }
 
         .sidebar-search {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .sidebar-search-label {
             display: block;
             margin-bottom: 7px;
-            color: #58695d;
+            color: #506257;
             font-size: 0.82rem;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .sidebar-search-field {
@@ -207,10 +193,10 @@ const animals = [
 
         .sidebar-search-input {
             width: 100%;
-            height: 42px;
-            border: 1px solid #cfdad2;
-            border-radius: 8px;
-            background: #fbfdfb;
+            height: 44px;
+            border: 1px solid #d6e1d8;
+            border-radius: 12px;
+            background: #ffffff;
             box-sizing: border-box;
             color: #263b2a;
             font-size: 0.95rem;
@@ -227,54 +213,107 @@ const animals = [
 
         .sidebar-list {
             display: grid;
-            gap: 10px;
+            gap: 8px;
         }
 
         .sidebar-item {
+            align-items: center;
             width: 100%;
-            border: 1px solid #d9e2dc;
-            border-radius: 8px;
-            background: #f8faf9;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            background: transparent;
             color: #263b2a;
             cursor: pointer;
-            font-size: 0.98rem;
-            font-weight: 700;
-            padding: 12px 14px;
+            display: flex;
+            font-size: 0.96rem;
+            font-weight: 800;
+            gap: 10px;
+            min-height: 44px;
+            padding: 10px 12px;
+            position: relative;
             text-align: left;
-            transition: background 0.2s, border-color 0.2s, color 0.2s;
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
         }
 
-        .sidebar-item:hover,
+        .sidebar-item:hover {
+            background: #edf5ee;
+            border-color: #d7e8da;
+            transform: translateX(2px);
+        }
+
         .sidebar-item.active {
+            background: #e7f3e8;
+            border-color: #cfe5d2;
+            color: var(--primary-color);
+        }
+
+        .sidebar-item.active::before {
             background: var(--primary-color);
-            border-color: var(--primary-color);
+            border-radius: 999px;
+            content: "";
+            height: 22px;
+            left: -2px;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+        }
+
+        .sidebar-icon {
+            align-items: center;
+            background: #eef5ef;
+            border-radius: 10px;
+            color: var(--primary-color);
+            display: inline-flex;
+            flex: 0 0 auto;
+            font-size: 1rem;
+            height: 28px;
+            justify-content: center;
+            width: 28px;
+        }
+
+        .sidebar-icon svg {
+            display: block;
+            height: 18px;
+            stroke: currentColor;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-width: 2;
+            width: 18px;
+        }
+
+        .sidebar-item.active .sidebar-icon {
+            background: var(--primary-color);
             color: #fff;
         }
 
         .sidebar-nav {
             border-top: 1px solid #e3ebe5;
-            margin-top: 18px;
-            padding-top: 16px;
+            margin-top: auto;
+            padding-top: 18px;
         }
 
         .sidebar-link {
-            display: block;
-            border: 1px solid #d9e2dc;
-            border-radius: 8px;
-            background: #f8faf9;
+            align-items: center;
+            border: 1px solid #d9e6dc;
+            border-radius: 12px;
+            background: #ffffff;
             color: #263b2a;
             box-sizing: border-box;
+            display: flex;
             font-size: 0.98rem;
-            font-weight: 700;
-            padding: 12px 14px;
+            font-weight: 800;
+            gap: 10px;
+            padding: 12px;
             text-decoration: none;
-            transition: background 0.2s, border-color 0.2s, color 0.2s;
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
         }
 
         .sidebar-link:hover {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-            color: #fff;
+            background: #edf5ee;
+            border-color: #cfe5d2;
+            color: var(--primary-color);
+            transform: translateY(-1px);
         }
 
         header {
@@ -350,6 +389,50 @@ const animals = [
 
         :global(.maplibregl-marker) {
             z-index: 20;
+        }
+
+        :global(.wildlife-marker-overlay) {
+            inset: 0;
+            pointer-events: none;
+            position: absolute;
+            z-index: 999;
+        }
+
+        :global(.wildlife-map-pin) {
+            align-items: center;
+            background: transparent;
+            border: 0;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            height: 42px;
+            justify-content: center;
+            pointer-events: auto;
+            position: absolute;
+            transform: translate(-50%, -100%);
+            width: 30px;
+        }
+
+        :global(.wildlife-map-pin svg) {
+            display: block;
+            filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.25));
+            height: 42px;
+            width: 30px;
+        }
+
+        :global(.map-marker-status) {
+            background: rgba(255, 255, 255, 0.94);
+            border-radius: 8px;
+            bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+            color: #1f4d26;
+            font-size: 13px;
+            font-weight: 800;
+            left: 12px;
+            padding: 6px 10px;
+            pointer-events: none;
+            position: absolute;
+            z-index: 1000;
         }
 
         /* 筛选面板 */
@@ -533,6 +616,14 @@ const animals = [
             background: #e8eee9;
             color: #65736a;
             font-weight: 700;
+        }
+
+        :global(.gallery-state) {
+            grid-column: 1 / -1;
+            color: #5f6f65;
+            font-weight: 700;
+            padding: 28px 0;
+            text-align: center;
         }
 
         :global(.img-count-badge) {
@@ -870,7 +961,10 @@ const animals = [
     <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="closeSidebar()"></div>
     <aside id="category-sidebar" class="sidebar" aria-label="动物分类侧边栏">
         <div class="sidebar-header">
-            <h2 class="sidebar-title">动物分类</h2>
+            <div>
+                <h2 class="sidebar-title">动物分类</h2>
+                <p class="sidebar-subtitle">按类群筛选观察记录</p>
+            </div>
             <button class="sidebar-close" type="button" aria-label="关闭侧边栏" onclick="closeSidebar()">×</button>
         </div>
         <div class="sidebar-search">
@@ -887,14 +981,60 @@ const animals = [
             </div>
         </div>
         <div class="sidebar-list">
-            <button class="sidebar-item active" type="button" data-group="all" onclick="setSidebarCategory(this)">全部</button>
-            <button class="sidebar-item" type="button" data-group="bird" onclick="setSidebarCategory(this)">鸟类</button>
-            <button class="sidebar-item" type="button" data-group="mammal" onclick="setSidebarCategory(this)">兽类</button>
-            <button class="sidebar-item" type="button" data-group="fish" onclick="setSidebarCategory(this)">鱼类</button>
-            <button class="sidebar-item" type="button" data-group="invertebrate" onclick="setSidebarCategory(this)">无脊椎类</button>
+            <button class="sidebar-item active" type="button" data-group="all" onclick="setSidebarCategory(this)"><span class="sidebar-icon">◎</span><span>全部</span></button>
+            <button class="sidebar-item" type="button" data-group="bird" onclick="setSidebarCategory(this)">
+                <span class="sidebar-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M8 18c-2.4-1-4-3.2-4-5.8C4 8.8 6.8 6 10.2 6h3.3c2.3 0 4.2 1.9 4.2 4.2 0 2.7-2.2 4.8-4.8 4.8H10" fill="none" />
+                        <path d="M16.8 8.5 22 7l-3.7 4.1" fill="none" />
+                        <path d="M8.5 11c1 2.7 1 5.1-.2 7.5" fill="none" />
+                        <path d="M9 19h5" fill="none" />
+                        <circle cx="13.6" cy="9.4" r=".8" fill="currentColor" stroke="none" />
+                    </svg>
+                </span>
+                <span>鸟类</span>
+            </button>
+            <button class="sidebar-item" type="button" data-group="mammal" onclick="setSidebarCategory(this)">
+                <span class="sidebar-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M7.2 10.5c.4-3.2 2.3-5.2 4.8-5.2s4.4 2 4.8 5.2" fill="none" />
+                        <path d="M5.3 11.8c-1.2.3-2 1.2-2 2.4 0 1.4 1.1 2.6 2.6 2.6h1.3" fill="none" />
+                        <path d="M18.7 11.8c1.2.3 2 1.2 2 2.4 0 1.4-1.1 2.6-2.6 2.6h-1.3" fill="none" />
+                        <path d="M7.2 11.2c.9 5.2 2.4 7.5 4.8 7.5s3.9-2.3 4.8-7.5" fill="none" />
+                        <path d="M9.5 14.8c1.3 1 3.7 1 5 0" fill="none" />
+                        <circle cx="9.6" cy="11.2" r=".8" fill="currentColor" stroke="none" />
+                        <circle cx="14.4" cy="11.2" r=".8" fill="currentColor" stroke="none" />
+                    </svg>
+                </span>
+                <span>兽类</span>
+            </button>
+            <button class="sidebar-item" type="button" data-group="fish" onclick="setSidebarCategory(this)">
+                <span class="sidebar-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M3 12s3.5-5 9-5 9 5 9 5-3.5 5-9 5-9-5-9-5Z" fill="none" />
+                        <path d="M18 12 22 8v8l-4-4Z" fill="none" />
+                        <path d="M8 9.2c1.2 1.8 1.2 3.8 0 5.6" fill="none" />
+                        <circle cx="7" cy="11" r=".8" fill="currentColor" stroke="none" />
+                    </svg>
+                </span>
+                <span>鱼类</span>
+            </button>
+            <button class="sidebar-item" type="button" data-group="invertebrate" onclick="setSidebarCategory(this)">
+                <span class="sidebar-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M9 12c0-2 1.3-3.4 3-3.4s3 1.4 3 3.4-1.3 3.4-3 3.4S9 14 9 12Z" fill="none" />
+                        <path d="M8.8 15.2c.7 1.6 1.8 2.6 3.2 2.6s2.5-1 3.2-2.6" fill="none" />
+                        <path d="M9.2 8.8C9.8 7.2 10.8 6.3 12 6.3s2.2.9 2.8 2.5" fill="none" />
+                        <path d="M7 10 4.5 8.5M7 12H4M7.2 14 4.7 15.7" fill="none" />
+                        <path d="M17 10l2.5-1.5M17 12h3M16.8 14l2.5 1.7" fill="none" />
+                        <path d="M10.7 6 9.4 4M13.3 6 14.6 4" fill="none" />
+                    </svg>
+                </span>
+                <span>无脊椎类</span>
+            </button>
         </div>
         <nav class="sidebar-nav" aria-label="页面导航">
-            <a class="sidebar-link" href="/about">关于我</a>
+            <a class="sidebar-link" href="/about"><span class="sidebar-icon">⌂</span><span>关于我</span></a>
         </nav>
     </aside>
 
@@ -922,6 +1062,7 @@ const animals = [
         </div>
 
         <div id="gallery" class="gallery">
+            <div class="gallery-state">正在读取物种记录...</div>
             {animals.map((item, index) => (
                 <div 
                     class="card animal-card" 
@@ -995,7 +1136,14 @@ const animals = [
         var currentImageIndex = 0;
         var wildlifeMap = null;
         var mapPopup = null;
-        var mapMarkers = [];
+        var mapMarkerFeatures = [];
+        var mapMarkerOverlay = null;
+        var mapMarkerStatus = null;
+        var hasLoadedRemoteSpecies = false;
+        var markerLayerInteractionsBound = false;
+        var WILDLIFE_MARKERS_SOURCE = 'wildlife-markers';
+        var WILDLIFE_MARKERS_CIRCLE_LAYER = 'wildlife-marker-circles';
+        var WILDLIFE_MARKERS_LABEL_LAYER = 'wildlife-marker-labels';
         var currentFilter = { iucn: 'all', group: 'all', search: '' };
         var sidebarGroups = {
             all: 'all',
@@ -1006,10 +1154,19 @@ const animals = [
         };
 
         function normalizeApiAnimal(item) {
-            var imageUrls = Array.isArray(item.images)
+            var normalizedImages = Array.isArray(item.images)
                 ? item.images.map(function(image) {
-                    return typeof image === 'string' ? image : image.url;
-                }).filter(Boolean)
+                    if (typeof image === 'string') {
+                        return { url: image, thumbnailUrl: image };
+                    }
+
+                    return {
+                        url: image && image.url,
+                        thumbnailUrl: image && (image.thumbnailUrl || image.thumbnail_url || image.thumbUrl || image.thumb_url || image.url)
+                    };
+                }).filter(function(image) {
+                    return image.url;
+                })
                 : [];
 
             return {
@@ -1022,7 +1179,8 @@ const animals = [
                 taxonomy: normalizeTaxonomy(item.taxonomy),
                 coords: Array.isArray(item.coordinates) ? item.coordinates : null,
                 exif: item.exif || '',
-                images: imageUrls,
+                images: normalizedImages.map(function(image) { return image.url; }),
+                thumbnails: normalizedImages.map(function(image) { return image.thumbnailUrl || image.url; }),
                 desc: item.desc || item.note || ''
             };
         }
@@ -1064,6 +1222,15 @@ const animals = [
             var gallery = document.getElementById('gallery');
             gallery.innerHTML = '';
 
+            if (animals.length === 0) {
+                var state = document.createElement('div');
+                state.className = 'gallery-state';
+                state.textContent = hasLoadedRemoteSpecies ? '还没有物种记录。' : '正在读取物种记录...';
+                gallery.appendChild(state);
+                applyFilters();
+                return;
+            }
+
             animals.forEach(function(item, index) {
                 var card = document.createElement('div');
                 card.className = 'card animal-card';
@@ -1085,7 +1252,7 @@ const animals = [
                     img.addEventListener('load', function() {
                         this.classList.add('is-loaded');
                     });
-                    img.src = item.images[0];
+                    img.src = (item.thumbnails && item.thumbnails[0]) || item.images[0];
                     if (img.complete) {
                         img.classList.add('is-loaded');
                     }
@@ -1325,12 +1492,9 @@ const animals = [
         }
 
         function renderMapMarkers() {
-            if (!wildlifeMap || !wildlifeMap.isStyleLoaded()) return;
+            if (!wildlifeMap) return;
 
-            mapMarkers.forEach(function(marker) {
-                marker.remove();
-            });
-            mapMarkers = [];
+            mapMarkerFeatures = [];
 
             var groupedAnimals = {};
             animals.forEach(function(item, index) {
@@ -1343,31 +1507,218 @@ const animals = [
                 }
             });
 
-            Object.keys(groupedAnimals).forEach(function(key) {
+            mapMarkerFeatures = Object.keys(groupedAnimals).map(function(key) {
                 var group = groupedAnimals[key];
-                var marker = new maplibregl.Marker({
-                    color: '#2e7d32'
-                })
-                    .setLngLat([group.coords[1], group.coords[0]])
-                    .setPopup(new maplibregl.Popup({ closeButton: true, closeOnClick: true }).setHTML(buildMapPopupHtml(group)))
-                    .addTo(wildlifeMap);
-                mapMarkers.push(marker);
-            });
+                var latitude = Number(group.coords[0]);
+                var longitude = Number(group.coords[1]);
+
+                if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                    return null;
+                }
+
+                return {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [longitude, latitude]
+                    },
+                    properties: {
+                        count: String(group.list.length),
+                        popupHtml: buildMapPopupHtml(group)
+                    }
+                };
+            }).filter(Boolean);
+
+            renderOverlayMarkers();
+            renderMarkerStatus();
+
+            if (wildlifeMap.isStyleLoaded()) {
+                renderMapMarkerLayers();
+            }
 
             fitMapToMarkers();
         }
 
-        function fitMapToMarkers() {
-            if (!wildlifeMap || mapMarkers.length === 0 || typeof maplibregl === 'undefined') return;
+        function renderMapMarkerLayers() {
+            if (!wildlifeMap) return;
 
-            var bounds = new maplibregl.LngLatBounds();
-            mapMarkers.forEach(function(marker) {
-                bounds.extend(marker.getLngLat());
+            try {
+                if (wildlifeMap.getLayer(WILDLIFE_MARKERS_LABEL_LAYER)) {
+                    wildlifeMap.removeLayer(WILDLIFE_MARKERS_LABEL_LAYER);
+                }
+                if (wildlifeMap.getLayer(WILDLIFE_MARKERS_CIRCLE_LAYER)) {
+                    wildlifeMap.removeLayer(WILDLIFE_MARKERS_CIRCLE_LAYER);
+                }
+                if (wildlifeMap.getSource(WILDLIFE_MARKERS_SOURCE)) {
+                    wildlifeMap.removeSource(WILDLIFE_MARKERS_SOURCE);
+                }
+
+                wildlifeMap.addSource(WILDLIFE_MARKERS_SOURCE, {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: mapMarkerFeatures
+                    }
+                });
+
+                wildlifeMap.addLayer({
+                    id: WILDLIFE_MARKERS_CIRCLE_LAYER,
+                    type: 'circle',
+                    source: WILDLIFE_MARKERS_SOURCE,
+                    paint: {
+                        'circle-radius': 22,
+                        'circle-color': '#2e7d32',
+                        'circle-stroke-color': '#ffffff',
+                        'circle-stroke-width': 5,
+                        'circle-opacity': 0.98
+                    }
+                });
+
+                wildlifeMap.addLayer({
+                    id: WILDLIFE_MARKERS_LABEL_LAYER,
+                    type: 'symbol',
+                    source: WILDLIFE_MARKERS_SOURCE,
+                    layout: {
+                        'text-field': ['get', 'count'],
+                        'text-size': 17,
+                        'text-allow-overlap': true,
+                        'text-ignore-placement': true
+                    },
+                    paint: {
+                        'text-color': '#ffffff'
+                    }
+                });
+
+                moveWildlifeMarkerLayersToTop();
+                bindMarkerLayerInteractions();
+            } catch (error) {
+                console.warn('Could not render wildlife marker layers', error);
+            }
+        }
+
+        function ensureMarkerOverlay() {
+            var mapElement = document.getElementById('map');
+            if (!mapElement) return null;
+
+            if (!mapMarkerOverlay) {
+                mapMarkerOverlay = document.createElement('div');
+                mapMarkerOverlay.className = 'wildlife-marker-overlay';
+                mapElement.appendChild(mapMarkerOverlay);
+            }
+
+            return mapMarkerOverlay;
+        }
+
+        function renderOverlayMarkers() {
+            var overlay = ensureMarkerOverlay();
+            if (!overlay || !wildlifeMap) return;
+
+            overlay.innerHTML = '';
+
+            mapMarkerFeatures.forEach(function(feature) {
+                var button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'wildlife-map-pin';
+                button.setAttribute('aria-label', '打开观察地点');
+                button.innerHTML = [
+                    '<svg viewBox="0 0 30 42" aria-hidden="true" focusable="false">',
+                    '<path d="M15 41C15 41 28 25.9 28 15.2C28 7.4 22.2 2 15 2C7.8 2 2 7.4 2 15.2C2 25.9 15 41 15 41Z" fill="#2f7fca" stroke="#ffffff" stroke-width="3"/>',
+                    '<circle cx="15" cy="15" r="6.2" fill="#ffffff" opacity="0.94"/>',
+                    '<path d="M9.6 8.6C11.1 6.9 13.1 6 15.5 6" fill="none" stroke="#7fb3e6" stroke-width="2" stroke-linecap="round" opacity="0.65"/>',
+                    '</svg>'
+                ].join('');
+                button.dataset.lng = String(feature.geometry.coordinates[0]);
+                button.dataset.lat = String(feature.geometry.coordinates[1]);
+                button.dataset.popupHtml = feature.properties.popupHtml || '';
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    new maplibregl.Popup({ closeButton: true, closeOnClick: true })
+                        .setLngLat([Number(button.dataset.lng), Number(button.dataset.lat)])
+                        .setHTML(button.dataset.popupHtml || '')
+                        .addTo(wildlifeMap);
+                });
+                overlay.appendChild(button);
             });
 
-            if (mapMarkers.length === 1) {
+            updateOverlayMarkerPositions();
+        }
+
+        function renderMarkerStatus() {
+            var mapElement = document.getElementById('map');
+            if (!mapElement) return;
+
+            if (!mapMarkerStatus) {
+                mapMarkerStatus = document.createElement('div');
+                mapMarkerStatus.className = 'map-marker-status';
+                mapElement.appendChild(mapMarkerStatus);
+            }
+
+            mapMarkerStatus.textContent = '地图点数量：' + mapMarkerFeatures.length;
+        }
+
+        function updateOverlayMarkerPositions() {
+            if (!wildlifeMap || !mapMarkerOverlay) return;
+
+            var pins = mapMarkerOverlay.querySelectorAll('.wildlife-map-pin');
+            pins.forEach(function(pin) {
+                var point = wildlifeMap.project([Number(pin.dataset.lng), Number(pin.dataset.lat)]);
+                pin.style.left = point.x + 'px';
+                pin.style.top = point.y + 'px';
+            });
+        }
+
+        function moveWildlifeMarkerLayersToTop() {
+            if (!wildlifeMap) return;
+
+            try {
+                if (wildlifeMap.getLayer(WILDLIFE_MARKERS_CIRCLE_LAYER)) {
+                    wildlifeMap.moveLayer(WILDLIFE_MARKERS_CIRCLE_LAYER);
+                }
+                if (wildlifeMap.getLayer(WILDLIFE_MARKERS_LABEL_LAYER)) {
+                    wildlifeMap.moveLayer(WILDLIFE_MARKERS_LABEL_LAYER);
+                }
+            } catch (error) {
+                console.warn('Could not move wildlife marker layers to top', error);
+            }
+        }
+
+        function bindMarkerLayerInteractions() {
+            if (markerLayerInteractionsBound) return;
+            markerLayerInteractionsBound = true;
+
+            [WILDLIFE_MARKERS_CIRCLE_LAYER, WILDLIFE_MARKERS_LABEL_LAYER].forEach(function(layerId) {
+                wildlifeMap.on('click', layerId, function(event) {
+                    var feature = event.features && event.features[0];
+                    if (!feature) return;
+
+                    new maplibregl.Popup({ closeButton: true, closeOnClick: true })
+                        .setLngLat(feature.geometry.coordinates)
+                        .setHTML(feature.properties.popupHtml || '')
+                        .addTo(wildlifeMap);
+                });
+
+                wildlifeMap.on('mouseenter', layerId, function() {
+                    wildlifeMap.getCanvas().style.cursor = 'pointer';
+                });
+
+                wildlifeMap.on('mouseleave', layerId, function() {
+                    wildlifeMap.getCanvas().style.cursor = '';
+                });
+            });
+        }
+
+        function fitMapToMarkers() {
+            if (!wildlifeMap || mapMarkerFeatures.length === 0 || typeof maplibregl === 'undefined') return;
+
+            var bounds = new maplibregl.LngLatBounds();
+            mapMarkerFeatures.forEach(function(feature) {
+                bounds.extend(feature.geometry.coordinates);
+            });
+
+            if (mapMarkerFeatures.length === 1) {
                 wildlifeMap.easeTo({
-                    center: mapMarkers[0].getLngLat(),
+                    center: mapMarkerFeatures[0].geometry.coordinates,
                     zoom: Math.max(wildlifeMap.getZoom(), 10),
                     duration: 400
                 });
@@ -1500,20 +1851,38 @@ const animals = [
                 applyMapStyleCleanup();
                 renderMapMarkers();
             });
+
+            wildlifeMap.on('idle', function() {
+                moveWildlifeMarkerLayersToTop();
+                updateOverlayMarkerPositions();
+            });
+            wildlifeMap.on('move', updateOverlayMarkerPositions);
+            wildlifeMap.on('resize', updateOverlayMarkerPositions);
         }
 
         async function loadRemoteSpecies() {
             try {
                 var response = await fetch(API_BASE_URL + '/species');
-                if (!response.ok) return;
+                if (!response.ok) {
+                    hasLoadedRemoteSpecies = true;
+                    renderGallery();
+                    return;
+                }
 
                 var data = await response.json();
-                if (!Array.isArray(data.species) || data.species.length === 0) return;
+                if (!Array.isArray(data.species)) {
+                    hasLoadedRemoteSpecies = true;
+                    renderGallery();
+                    return;
+                }
 
                 animals = data.species.map(normalizeApiAnimal);
+                hasLoadedRemoteSpecies = true;
                 renderGallery();
                 renderMapMarkers();
             } catch (error) {
+                hasLoadedRemoteSpecies = true;
+                renderGallery();
                 console.warn('Could not load remote species data', error);
             }
         };

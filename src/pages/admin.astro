@@ -612,23 +612,33 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             var files = Array.from(imagesInput.files || []);
 
             if (files.length > 0) {
-                showStatus('正在压缩图片...', '');
+                showStatus('正在生成展示图和首页缩略图...', '');
             }
 
             for (var index = 0; index < files.length; index += 1) {
                 var file = files[index];
-                var compressedFile = await compressImage(file);
+                var compressedFile = await compressImage(file, {
+                    maxSide: 1800,
+                    quality: 0.82,
+                    suffix: ''
+                });
+                var thumbnailFile = await compressImage(file, {
+                    maxSide: 720,
+                    quality: 0.76,
+                    suffix: '-thumb'
+                });
                 selectedImages.push({
                     id: Date.now() + '-' + index + '-' + file.name,
                     originalFile: file,
                     compressedFile: compressedFile,
-                    previewUrl: URL.createObjectURL(compressedFile)
+                    thumbnailFile: thumbnailFile,
+                    previewUrl: URL.createObjectURL(thumbnailFile)
                 });
             }
 
             if (files.length > 0) {
                 renderSelectedImages();
-                showStatus('已添加 ' + selectedImages.length + ' 张图片，提交时会上传压缩后的版本。', 'success');
+                showStatus('已添加 ' + selectedImages.length + ' 张图片，提交时会上传压缩图和首页缩略图。', 'success');
             }
 
             imagesInput.value = '';
@@ -653,17 +663,14 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             try {
                 var formData = new FormData(form);
                 var uploadedImages = [];
-                var files = selectedImages.map(function(image) {
-                    return image.compressedFile;
-                });
                 var wasEditing = editingId !== null;
                 var uploadMeta = {
                     name: String(formData.get('name') || '').trim(),
                     latinName: String(formData.get('latinName') || '').trim()
                 };
 
-                for (var index = 0; index < files.length; index += 1) {
-                    uploadedImages.push(await uploadImage(files[index], uploadMeta));
+                for (var index = 0; index < selectedImages.length; index += 1) {
+                    uploadedImages.push(await uploadImageSet(selectedImages[index], uploadMeta));
                 }
 
                 var payload = {
@@ -865,7 +872,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 if (record.images && record.images[0]) {
                     thumb = document.createElement('img');
                     thumb.alt = record.name || '物种图片';
-                    thumb.src = record.images[0].url;
+                    thumb.src = record.images[0].thumbnailUrl || record.images[0].thumbnail_url || record.images[0].url;
                 } else {
                     thumb = document.createElement('div');
                     thumb.textContent = '无图';
@@ -1000,11 +1007,24 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             }
         }
 
-        async function uploadImage(file, meta) {
+        async function uploadImageSet(selectedImage, meta) {
+            var image = await uploadImage(selectedImage.compressedFile, meta, 'large');
+            var thumbnail = await uploadImage(selectedImage.thumbnailFile, meta, 'thumb');
+
+            return {
+                url: image.url,
+                key: image.key,
+                thumbnailUrl: thumbnail.url,
+                thumbnailKey: thumbnail.key
+            };
+        }
+
+        async function uploadImage(file, meta, variant) {
             var body = new FormData();
             body.append('image', file);
             body.append('latinName', meta.latinName || '');
             body.append('name', meta.name || '');
+            body.append('variant', variant || 'large');
 
             var response = await fetch(API_BASE_URL + '/upload', {
                 method: 'POST',
@@ -1019,13 +1039,14 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             return response.json();
         }
 
-        async function compressImage(file) {
+        async function compressImage(file, options) {
             if (!file.type.startsWith('image/')) {
                 return file;
             }
 
+            var settings = options || {};
             var image = await loadImage(file);
-            var maxSide = 1800;
+            var maxSide = settings.maxSide || 1800;
             var scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
             var width = Math.max(1, Math.round(image.naturalWidth * scale));
             var height = Math.max(1, Math.round(image.naturalHeight * scale));
@@ -1040,9 +1061,9 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             context.drawImage(image, 0, 0, width, height);
             URL.revokeObjectURL(image.src);
 
-            var blob = await canvasToBlob(canvas, 'image/webp', 0.82);
+            var blob = await canvasToBlob(canvas, 'image/webp', settings.quality || 0.82);
             var basename = file.name.replace(/\.[^.]+$/, '') || 'wildlife-photo';
-            return new File([blob], basename + '.webp', {
+            return new File([blob], basename + (settings.suffix || '') + '.webp', {
                 type: 'image/webp',
                 lastModified: Date.now()
             });
