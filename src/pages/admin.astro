@@ -246,6 +246,62 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             margin: 0;
         }
 
+        .ai-assist {
+            align-items: flex-start;
+            background: #f7fbf8;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+            padding: 12px;
+        }
+
+        .ai-assist-header {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .ai-assist-title {
+            color: #234b27;
+            font-weight: 900;
+        }
+
+        .ai-result-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .ai-result-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            display: grid;
+            gap: 6px;
+            padding: 10px;
+        }
+
+        .ai-result-name {
+            color: #17351d;
+            font-weight: 900;
+        }
+
+        .ai-result-meta,
+        .ai-result-reason {
+            color: var(--muted-color);
+            font-size: 0.9rem;
+            line-height: 1.45;
+            margin: 0;
+        }
+
+        .ai-result-card button {
+            justify-self: start;
+            padding: 8px 10px;
+        }
+
         .location-actions {
             display: flex;
             flex-wrap: wrap;
@@ -565,6 +621,16 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                         <input id="images" name="images" type="file" accept="image/jpeg,image/png,image/webp" multiple />
                         <p id="image-hint" class="field-note">可以一次选择多张，也可以分多次继续添加。</p>
                         <div id="preview-list" class="preview-list"></div>
+                        <div class="ai-assist">
+                            <div class="ai-assist-header">
+                                <div>
+                                    <div class="ai-assist-title">AI &#29289;&#31181;&#35782;&#21035;</div>
+                                    <p class="field-note">&#20808;&#36873;&#25321;&#22270;&#29255;&#65292;&#28982;&#21518;&#35753; AI &#32473;&#20986;&#20505;&#36873;&#32467;&#26524;&#12290;&#20445;&#23384;&#21069;&#35831;&#20154;&#24037;&#30830;&#35748;&#12290;</p>
+                                </div>
+                                <button id="identify-button" class="secondary-button" type="button" disabled>AI &#35782;&#21035;&#31532;&#19968;&#24352;&#22270;</button>
+                            </div>
+                            <div id="identify-results" class="ai-result-list"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -633,6 +699,8 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         var longitudeInput = document.getElementById('longitude');
         var locationMapElement = document.getElementById('location-map');
         var previewList = document.getElementById('preview-list');
+        var identifyButton = document.getElementById('identify-button');
+        var identifyResults = document.getElementById('identify-results');
         var submitButton = document.getElementById('submit-button');
         var cancelEditButton = document.getElementById('cancel-edit-button');
         var statusBox = document.getElementById('status');
@@ -659,6 +727,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         refreshButton.addEventListener('click', loadSpeciesRecords);
         exportButton.addEventListener('click', exportBackup);
         recordsSearch.addEventListener('input', renderRecords);
+        identifyButton.addEventListener('click', identifyFirstImage);
         locationIdInput.addEventListener('change', applySelectedLocation);
         saveLocationButton.addEventListener('click', saveCurrentLocation);
         cancelEditButton.addEventListener('click', function() {
@@ -1564,6 +1633,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 item.appendChild(removeButton);
                 previewList.appendChild(item);
             });
+            updateIdentifyState();
         }
 
         function removeSelectedImage(id) {
@@ -1577,6 +1647,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             });
             selectedImages = nextImages;
             renderSelectedImages();
+            clearIdentifyResults();
             showStatus(selectedImages.length > 0 ? '已添加 ' + selectedImages.length + ' 张图片。' : '', '');
         }
 
@@ -1587,6 +1658,126 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 URL.revokeObjectURL(selectedImage.previewUrl);
             });
             selectedImages = [];
+            clearIdentifyResults();
+            updateIdentifyState();
+        }
+
+        function updateIdentifyState() {
+            identifyButton.disabled = selectedImages.length === 0;
+        }
+
+        function clearIdentifyResults() {
+            identifyResults.innerHTML = '';
+        }
+
+        async function identifyFirstImage() {
+            if (selectedImages.length === 0) {
+                showStatus('请先选择至少一张图片。', 'error');
+                return;
+            }
+
+            identifyButton.disabled = true;
+            identifyButton.textContent = 'AI 识别中...';
+            identifyResults.innerHTML = '';
+            showStatus('正在识别第一张图片，请稍等。', '');
+
+            try {
+                var body = new FormData();
+                body.append('image', selectedImages[0].compressedFile);
+
+                var response = await fetch(API_BASE_URL + '/identify', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: body
+                });
+
+                if (!response.ok) {
+                    throw new Error(await readError(response));
+                }
+
+                var data = await response.json();
+                renderIdentifyResults(Array.isArray(data.candidates) ? data.candidates : []);
+            } catch (error) {
+                identifyResults.innerHTML = '';
+                showStatus(error.message || 'AI 识别失败，请稍后再试。', 'error');
+            } finally {
+                identifyButton.textContent = 'AI 识别第一张图';
+                updateIdentifyState();
+            }
+        }
+
+        function renderIdentifyResults(candidates) {
+            identifyResults.innerHTML = '';
+
+            if (!candidates.length) {
+                identifyResults.appendChild(createEmptyState('AI 暂时没有给出可靠候选结果。'));
+                showStatus('AI 没有识别出可靠结果，你可以手动填写。', '');
+                return;
+            }
+
+            candidates.forEach(function(candidate, index) {
+                var card = document.createElement('div');
+                card.className = 'ai-result-card';
+
+                var name = document.createElement('div');
+                name.className = 'ai-result-name';
+                name.textContent = (candidate.name || '未给出中文名') + (candidate.latinName ? ' / ' + candidate.latinName : '');
+
+                var meta = document.createElement('p');
+                meta.className = 'ai-result-meta';
+                meta.textContent = [
+                    candidate.groupType ? '类群：' + labelGroupType(candidate.groupType) : '',
+                    candidate.taxonomy ? '分类：' + candidate.taxonomy : '',
+                    candidate.confidence ? '置信度：' + candidate.confidence : ''
+                ].filter(Boolean).join(' · ');
+
+                var reason = document.createElement('p');
+                reason.className = 'ai-result-reason';
+                reason.textContent = candidate.reason || '请结合原图人工确认。';
+
+                var useButton = document.createElement('button');
+                useButton.className = 'secondary-button';
+                useButton.type = 'button';
+                useButton.textContent = index === 0 ? '使用推荐结果' : '使用此结果';
+                useButton.addEventListener('click', function() {
+                    applyIdentifyCandidate(candidate);
+                });
+
+                card.appendChild(name);
+                card.appendChild(meta);
+                card.appendChild(reason);
+                card.appendChild(useButton);
+                identifyResults.appendChild(card);
+            });
+
+            showStatus('AI 已给出候选结果，请确认后再保存。', 'success');
+        }
+
+        function applyIdentifyCandidate(candidate) {
+            if (candidate.name) form.elements.name.value = candidate.name;
+            if (candidate.latinName) form.elements.latinName.value = candidate.latinName;
+            if (candidate.groupType && candidate.groupType !== 'other') form.elements.groupType.value = candidate.groupType;
+            if (candidate.taxonomy && hasSelectOption(form.elements.taxonomy, candidate.taxonomy)) {
+                form.elements.taxonomy.value = candidate.taxonomy;
+            }
+            if (candidate.reason && !form.elements.note.value.trim()) {
+                form.elements.note.value = 'AI 识别参考：' + candidate.reason;
+            }
+            showStatus('已填入 AI 候选结果，请人工确认后保存。', 'success');
+        }
+
+        function hasSelectOption(select, value) {
+            return Array.from(select.options).some(function(option) {
+                return option.value === value;
+            });
+        }
+
+        function labelGroupType(value) {
+            if (value === 'bird') return '鸟类';
+            if (value === 'mammal') return '兽类';
+            if (value === 'fish') return '鱼类';
+            if (value === 'invertebrate') return '无脊椎类';
+            return '其他';
         }
 
         function createEmptyState(message) {
