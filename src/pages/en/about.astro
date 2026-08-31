@@ -1,0 +1,178 @@
+---
+const IMAGE_BASE_URL = "https://images.frankiewildlife.bid";
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About | Frankie Wildlife Archive</title>
+    <style>
+        :root {
+            --primary-color: #2e7d32;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: #28332b;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 28px 20px;
+        }
+
+        main {
+            margin: 0 auto;
+            max-width: 1040px;
+        }
+
+        .top-links {
+            align-items: center;
+            display: flex;
+            gap: 18px;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .top-links a {
+            color: var(--primary-color);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .top-links a:hover {
+            text-decoration: underline;
+        }
+
+        .intro-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+            padding: 28px;
+        }
+
+        .intro-hero {
+            align-items: center;
+            display: grid;
+            gap: 28px;
+            grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+        }
+
+        .profile-photo {
+            align-self: stretch;
+            background: #e2e9e4;
+            border: 1px solid #e2e9e4;
+            border-radius: 10px;
+            min-height: 320px;
+            overflow: hidden;
+        }
+
+        .profile-photo img {
+            display: block;
+            height: 100%;
+            object-fit: contain;
+            width: 100%;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin: 0 0 12px;
+        }
+
+        .lead {
+            color: #4f5f54;
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin: 0;
+        }
+
+        section {
+            border-top: 1px solid #e2e9e4;
+            margin-top: 18px;
+            padding-top: 18px;
+        }
+
+        h2 {
+            color: #234b27;
+            font-size: 1.1rem;
+            margin: 0 0 8px;
+        }
+
+        p {
+            color: #56635a;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        @media (max-width: 760px) {
+            .intro-hero {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-photo {
+                aspect-ratio: 16 / 9;
+                min-height: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <nav class="top-links" aria-label="Page navigation">
+            <a href="/en/">Back to Archive</a>
+            <a href="/about">中文</a>
+        </nav>
+
+        <article class="intro-card">
+            <div class="intro-hero">
+                <div>
+                    <h1>About Me</h1>
+                    <p class="lead">
+                        I am Frankie, a wildlife enthusiast building a personal archive of field encounters,
+                        species photographs, and quiet observations from different habitats. This site is a
+                        growing record of the animals I meet, the places I visit, and the details I do not want
+                        to lose after each journey.
+                    </p>
+                </div>
+
+                <div class="profile-photo">
+                    <img
+                        src={`${IMAGE_BASE_URL}/person_pictures-optimized.webp`}
+                        alt="Portrait of Frankie"
+                        width="1200"
+                        height="1575"
+                        loading="eager"
+                        decoding="async"
+                    />
+                </div>
+            </div>
+
+            <section>
+                <h2>Observation Focus</h2>
+                <p>
+                    I mainly record birds, mammals, fish, and invertebrates found in cities, parks, mountains,
+                    wetlands, and aquatic habitats.
+                </p>
+            </section>
+
+            <section>
+                <h2>Favorite Field Sites</h2>
+                <p>
+                    Pantanal wetlands in Brazil, Serengeti National Park in Tanzania, and the Coral Triangle.
+                </p>
+            </section>
+
+            <section>
+                <h2>Contact</h2>
+                <p>
+                    Email: frankie2024chan@gmail.com<br />
+                    Instagram: @frankiechanc
+                </p>
+            </section>
+        </article>
+    </main>
+</body>
+</html>

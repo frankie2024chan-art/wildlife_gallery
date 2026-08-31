@@ -7,11 +7,11 @@ const animals = [];
 ---
 
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>野生动物观察图鉴与足迹</title>
+    <title>Frankie Wildlife Archive</title>
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.css" />
     <style>
         :root {
@@ -1878,32 +1878,32 @@ const animals = [];
 <body>
 
     <button class='menu-toggle' type='button' aria-label='Open category sidebar' onclick='openSidebar()'>&#9776;</button>
-    <a class='language-switch' href='/en/' aria-label='Switch to English'>EN</a>
+    <a class='language-switch' href='/' aria-label='Switch to Chinese'>&#20013;&#25991;</a>
     <a class='admin-shortcut' href='/admin' aria-label='Add species record' title='Add species record'>+</a>
     <div id='sidebar-backdrop' class='sidebar-backdrop' onclick='closeSidebar()'></div>
     <aside id='category-sidebar' class='sidebar' aria-label='Animal category sidebar'>
         <div class='sidebar-header'>
             <div>
-                <h2 class='sidebar-title'>&#21160;&#29289;&#20998;&#31867;</h2>
-                <p class='sidebar-subtitle'>&#25353;&#31867;&#32676;&#31579;&#36873;&#35266;&#23519;&#35760;&#24405;</p>
+                <h2 class='sidebar-title'>Categories</h2>
+                <p class='sidebar-subtitle'>Filter records by animal group</p>
             </div>
             <button class='sidebar-close' type='button' aria-label='Close sidebar' onclick='closeSidebar()'>&times;</button>
         </div>
         <div class='sidebar-search'>
-            <label class='sidebar-search-label' for='species-search'>&#25628;&#32034;&#29289;&#31181;</label>
+            <label class='sidebar-search-label' for='species-search'>Search Species</label>
             <div class='sidebar-search-field'>
                 <input
                     id='species-search'
                     class='sidebar-search-input'
                     type='search'
-                    placeholder='&#20013;&#25991;&#21517;&#25110; Latin name'
+                    placeholder='Species name or Latin name'
                     aria-label='Search species by Chinese name or Latin name'
                     oninput='setSidebarSearch(this.value)'
                 />
             </div>
         </div>
         <div class='sidebar-list'>
-            <button class='sidebar-item active' type='button' data-group='all' onclick='setSidebarCategory(this)'><span class='sidebar-icon'>&#9678;</span><span>&#20840;&#37096;</span></button>
+            <button class='sidebar-item active' type='button' data-group='all' onclick='setSidebarCategory(this)'><span class='sidebar-icon'>&#9678;</span><span>All</span></button>
             <button class='sidebar-item' type='button' data-group='bird' onclick='setSidebarCategory(this)'>
                 <span class='sidebar-icon'>
                     <svg viewBox='0 0 24 24' aria-hidden='true' focusable='false'>
@@ -1914,7 +1914,7 @@ const animals = [];
                         <circle cx='13.6' cy='9.4' r='.8' fill='currentColor' stroke='none' />
                     </svg>
                 </span>
-                <span>&#40479;&#31867;</span>
+                <span>Birds</span>
             </button>
             <button class='sidebar-item' type='button' data-group='mammal' onclick='setSidebarCategory(this)'>
                 <span class='sidebar-icon'>
@@ -1928,7 +1928,7 @@ const animals = [];
                         <circle cx='14.4' cy='11.2' r='.8' fill='currentColor' stroke='none' />
                     </svg>
                 </span>
-                <span>&#20861;&#31867;</span>
+                <span>Mammals</span>
             </button>
             <button class='sidebar-item' type='button' data-group='fish' onclick='setSidebarCategory(this)'>
                 <span class='sidebar-icon'>
@@ -1939,7 +1939,7 @@ const animals = [];
                         <circle cx='7' cy='11' r='.8' fill='currentColor' stroke='none' />
                     </svg>
                 </span>
-                <span>&#40060;&#31867;</span>
+                <span>Fish</span>
             </button>
             <button class='sidebar-item' type='button' data-group='invertebrate' onclick='setSidebarCategory(this)'>
                 <span class='sidebar-icon'>
@@ -1952,11 +1952,11 @@ const animals = [];
                         <path d='M10.7 6 9.4 4M13.3 6 14.6 4' fill='none' />
                     </svg>
                 </span>
-                <span>&#26080;&#33034;&#26894;&#31867;</span>
+                <span>Invertebrates</span>
             </button>
         </div>
         <nav class='sidebar-nav' aria-label='Page navigation'>
-            <a class='sidebar-link' href='/about'><span class='sidebar-icon'>&#9633;</span><span>&#20851;&#20110;&#25105;</span></a>
+            <a class='sidebar-link' href='/en/about'><span class='sidebar-icon'>&#9633;</span><span>About</span></a>
         </nav>
     </aside>
 
@@ -1965,7 +1965,7 @@ const animals = [];
             <div>
                 <p class='hero-kicker'>FWA / Field Archive</p>
                 <h1>Frankie Wildlife Archive</h1>
-                <p>&#20010;&#20154;&#37326;&#22806;&#35266;&#23519;&#35760;&#24405;&#19982;&#21160;&#29289;&#25668;&#24433;&#26723;&#26696;</p>
+                <p>Personal field records and wildlife photography archive.</p>
                 <div class='hero-stats' aria-label='Archive statistics'>
                     <span class='hero-stat'><span class='stat-number' id='species-count'>0</span><span class='stat-label'>Records</span></span>
                     <span class='hero-stat'><span class='stat-number' id='location-count'>0</span><span class='stat-label'>Locations</span></span>
@@ -1979,36 +1979,36 @@ const animals = [];
 
     <main class='page-shell'>
         <div class='section-header'>
-            <h2 class='section-title'>Observation Map <span class='section-subtitle'>&#35266;&#23519;&#22320;&#22270;</span></h2>
-            <p class='section-meta' id='map-summary'>&#27491;&#22312;&#35835;&#21462;&#35266;&#23519;&#32034;&#24341;</p>
+            <h2 class='section-title'>Observation Map <span class='section-subtitle'>Field Sites</span></h2>
+            <p class='section-meta' id='map-summary'>Loading observation index</p>
         </div>
         <div id='map'></div>
 
         <div class='section-header'>
-            <h2 class='section-title'>Collection Index <span class='section-subtitle'>&#29289;&#31181;&#35760;&#24405;&#32034;&#24341;</span></h2>
+            <h2 class='section-title'>Collection Index <span class='section-subtitle'>Species Records</span></h2>
             <p class='section-meta' id='collection-summary'>0 Records</p>
         </div>
         <div class='filter-panel'>
             <div class='filter-row'>
                 <button class='collection-tab active' type='button' data-group='all' onclick='setCollectionGroup(this)'>ALL <span id='tab-all-count'>0</span></button>
-                <button class='collection-tab' type='button' data-group='bird' onclick='setCollectionGroup(this)'>AVES &#40479;&#31867; <span id='tab-bird-count'>0</span></button>
-                <button class='collection-tab' type='button' data-group='mammal' onclick='setCollectionGroup(this)'>MAMMALIA &#20861;&#31867; <span id='tab-mammal-count'>0</span></button>
-                <button class='collection-tab' type='button' data-group='fish' onclick='setCollectionGroup(this)'>FISH &#40060;&#31867; <span id='tab-fish-count'>0</span></button>
-                <button class='collection-tab' type='button' data-group='invertebrate' onclick='setCollectionGroup(this)'>OTHER &#26080;&#33034;&#26894;&#31867; <span id='tab-invertebrate-count'>0</span></button>
+                <button class='collection-tab' type='button' data-group='bird' onclick='setCollectionGroup(this)'>AVES Birds <span id='tab-bird-count'>0</span></button>
+                <button class='collection-tab' type='button' data-group='mammal' onclick='setCollectionGroup(this)'>MAMMALIA Mammals <span id='tab-mammal-count'>0</span></button>
+                <button class='collection-tab' type='button' data-group='fish' onclick='setCollectionGroup(this)'>FISH Fish <span id='tab-fish-count'>0</span></button>
+                <button class='collection-tab' type='button' data-group='invertebrate' onclick='setCollectionGroup(this)'>OTHER Invertebrates <span id='tab-invertebrate-count'>0</span></button>
             </div>
             <div class='filter-row'>
                 <span class='filter-label'>IUCN Status</span>
-                <button class='filter-btn active' data-type='iucn' data-value='all' onclick='toggleTag(this)'>&#20840;&#37096;</button>
-                <button class='filter-btn' data-type='iucn' data-value='CR' onclick='toggleTag(this)'>&#26497;&#21361; (CR)</button>
-                <button class='filter-btn' data-type='iucn' data-value='EN' onclick='toggleTag(this)'>&#28626;&#21361; (EN)</button>
-                <button class='filter-btn' data-type='iucn' data-value='VU' onclick='toggleTag(this)'>&#26131;&#21361; (VU)</button>
-                <button class='filter-btn' data-type='iucn' data-value='NT' onclick='toggleTag(this)'>&#36817;&#21361; (NT)</button>
-                <button class='filter-btn' data-type='iucn' data-value='LC' onclick='toggleTag(this)'>&#26080;&#21361; (LC)</button>
+                <button class='filter-btn active' data-type='iucn' data-value='all' onclick='toggleTag(this)'>All</button>
+                <button class='filter-btn' data-type='iucn' data-value='CR' onclick='toggleTag(this)'>Critically Endangered (CR)</button>
+                <button class='filter-btn' data-type='iucn' data-value='EN' onclick='toggleTag(this)'>Endangered (EN)</button>
+                <button class='filter-btn' data-type='iucn' data-value='VU' onclick='toggleTag(this)'>Vulnerable (VU)</button>
+                <button class='filter-btn' data-type='iucn' data-value='NT' onclick='toggleTag(this)'>Near Threatened (NT)</button>
+                <button class='filter-btn' data-type='iucn' data-value='LC' onclick='toggleTag(this)'>Least Concern (LC)</button>
             </div>
         </div>
 
         <div id='gallery' class='gallery'>
-            <div class='gallery-state'>&#27491;&#22312;&#35835;&#21462;&#29289;&#31181;&#35760;&#24405;...</div>
+            <div class='gallery-state'>Loading species records...</div>
         </div>
     </main>
 
@@ -2017,7 +2017,7 @@ const animals = [];
         <nav aria-label='Footer navigation'>
             <a href='#map'>Observation Map</a>
             <a href='#gallery'>Species Index</a>
-            <a href='/about'>About</a>
+            <a href='/en/about'>About</a>
         </nav>
     </footer>
 
@@ -2170,24 +2170,24 @@ const animals = [];
         }
 
         function iucnLabel(value) {
-            if (value === 'CR') return '\u6781\u5371 CR';
-            if (value === 'EN') return '\u6fd2\u5371 EN';
-            if (value === 'VU') return '\u6613\u5371 VU';
-            if (value === 'NT') return '\u8fd1\u5371 NT';
-            return '\u65e0\u5371 LC';
+            if (value === 'CR') return 'Critically Endangered CR';
+            if (value === 'EN') return 'Endangered EN';
+            if (value === 'VU') return 'Vulnerable VU';
+            if (value === 'NT') return 'Near Threatened NT';
+            return 'Least Concern LC';
         }
 
         function taxonomyLabel(value) {
-            if (value === 'passerine') return '\u96c0\u5f62\u76ee';
-            if (value === 'waterbird') return '\u6e38\u79bd / \u6c34\u9e1f';
-            if (value === 'raptor') return '\u731b\u79bd';
-            if (value === 'carnivora') return '\u98df\u8089\u76ee';
-            if (value === 'artiodactyla') return '\u5076\u8e44\u76ee';
-            if (value === 'bird') return '\u9e1f\u7c7b';
-            if (value === 'mammal') return '\u517d\u7c7b';
-            if (value === 'fish') return '\u9c7c\u7c7b';
-            if (value === 'invertebrate') return '\u65e0\u810a\u690e\u7c7b';
-            return value || '\u672a\u5206\u7c7b';
+            if (value === 'passerine') return 'Passeriformes';
+            if (value === 'waterbird') return 'Waterbirds';
+            if (value === 'raptor') return 'Raptors';
+            if (value === 'carnivora') return 'Carnivora';
+            if (value === 'artiodactyla') return 'Artiodactyla';
+            if (value === 'bird') return 'Birds';
+            if (value === 'mammal') return 'Mammals';
+            if (value === 'fish') return 'Fish';
+            if (value === 'invertebrate') return 'Invertebrates';
+            return value || 'Unclassified';
         }
         function normalizeTaxonomy(value) {
             return taxonomyLabel(value);
