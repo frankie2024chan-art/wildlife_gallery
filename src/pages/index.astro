@@ -1930,6 +1930,18 @@ const animals = [];
                 </span>
                 <span>&#20861;&#31867;</span>
             </button>
+            <button class='sidebar-item' type='button' data-group='reptile' onclick='setSidebarCategory(this)'>
+                <span class='sidebar-icon'>
+                    <svg viewBox='0 0 24 24' aria-hidden='true' focusable='false'>
+                        <path d='M5 13.5c1.7-3.4 4.2-5.1 7.5-5.1 2.3 0 4.3.8 6 2.5' fill='none' />
+                        <path d='M6.5 15.7c2.2.8 4.3.5 6.3-.7l2.8-1.7' fill='none' />
+                        <path d='M18.5 10.9 22 9.8l-2 3' fill='none' />
+                        <path d='M8.3 11.2 5.7 8.8M10.9 9.2 9.2 6.2M12.7 15.1l1.9 2.7M8.8 15.6l-2.4 2' fill='none' />
+                        <circle cx='16.4' cy='10.8' r='.7' fill='currentColor' stroke='none' />
+                    </svg>
+                </span>
+                <span>爬行类</span>
+            </button>
             <button class='sidebar-item' type='button' data-group='fish' onclick='setSidebarCategory(this)'>
                 <span class='sidebar-icon'>
                     <svg viewBox='0 0 24 24' aria-hidden='true' focusable='false'>
@@ -1993,6 +2005,7 @@ const animals = [];
                 <button class='collection-tab active' type='button' data-group='all' onclick='setCollectionGroup(this)'>ALL <span id='tab-all-count'>0</span></button>
                 <button class='collection-tab' type='button' data-group='bird' onclick='setCollectionGroup(this)'>AVES &#40479;&#31867; <span id='tab-bird-count'>0</span></button>
                 <button class='collection-tab' type='button' data-group='mammal' onclick='setCollectionGroup(this)'>MAMMALIA &#20861;&#31867; <span id='tab-mammal-count'>0</span></button>
+                <button class='collection-tab' type='button' data-group='reptile' onclick='setCollectionGroup(this)'>REPTILIA 爬行类 <span id='tab-reptile-count'>0</span></button>
                 <button class='collection-tab' type='button' data-group='fish' onclick='setCollectionGroup(this)'>FISH &#40060;&#31867; <span id='tab-fish-count'>0</span></button>
                 <button class='collection-tab' type='button' data-group='invertebrate' onclick='setCollectionGroup(this)'>OTHER &#26080;&#33034;&#26894;&#31867; <span id='tab-invertebrate-count'>0</span></button>
             </div>
@@ -2063,6 +2076,7 @@ const animals = [];
             all: 'all',
             bird: 'bird',
             mammal: 'mammal',
+            reptile: 'reptile',
             fish: 'fish',
             invertebrate: 'invertebrate'
         };
@@ -2081,6 +2095,7 @@ const animals = [];
                 all: animals.length,
                 bird: 0,
                 mammal: 0,
+                reptile: 0,
                 fish: 0,
                 invertebrate: 0
             };
@@ -2115,6 +2130,7 @@ const animals = [];
             updateCountText('tab-all-count', groupCounts.all);
             updateCountText('tab-bird-count', groupCounts.bird);
             updateCountText('tab-mammal-count', groupCounts.mammal);
+            updateCountText('tab-reptile-count', groupCounts.reptile);
             updateCountText('tab-fish-count', groupCounts.fish);
             updateCountText('tab-invertebrate-count', groupCounts.invertebrate);
         }
@@ -2185,6 +2201,7 @@ const animals = [];
             if (value === 'artiodactyla') return '\u5076\u8e44\u76ee';
             if (value === 'bird') return '\u9e1f\u7c7b';
             if (value === 'mammal') return '\u517d\u7c7b';
+            if (value === 'reptile') return '爬行类';
             if (value === 'fish') return '\u9c7c\u7c7b';
             if (value === 'invertebrate') return '\u65e0\u810a\u690e\u7c7b';
             return value || '\u672a\u5206\u7c7b';
@@ -2196,6 +2213,7 @@ const animals = [];
         function inferGroupType(taxonomy) {
             if (taxonomy === 'passerine' || taxonomy === 'waterbird' || taxonomy === 'raptor') return 'bird';
             if (taxonomy === 'carnivora' || taxonomy === 'artiodactyla') return 'mammal';
+            if (taxonomy === '有鳞目' || taxonomy === '龟鳖目') return 'reptile';
             if (taxonomy === 'fish') return 'fish';
             if (taxonomy === 'invertebrate') return 'invertebrate';
             return '';

@@ -520,6 +520,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                         <select id="group-type" name="groupType" required>
                             <option value="bird">鸟类</option>
                             <option value="mammal">兽类</option>
+                            <option value="reptile">爬行类</option>
                             <option value="fish">鱼类</option>
                             <option value="invertebrate">无脊椎类</option>
                         </select>
@@ -1820,6 +1821,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
         function labelGroupType(value) {
             if (value === 'bird') return '鸟类';
             if (value === 'mammal') return '兽类';
+            if (value === 'reptile') return '爬行类';
             if (value === 'fish') return '鱼类';
             if (value === 'invertebrate') return '无脊椎类';
             return '其他';
