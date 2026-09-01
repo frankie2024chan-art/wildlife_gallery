@@ -297,6 +297,13 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             margin: 0;
         }
 
+        .ai-raw-response {
+            max-height: 360px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
         .ai-result-card button {
             justify-self: start;
             padding: 8px 10px;
@@ -1739,8 +1746,8 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                     rawTitle.textContent = 'AI 原始回答';
 
                     var rawBody = document.createElement('p');
-                    rawBody.className = 'ai-result-reason';
-                    rawBody.textContent = rawText.slice(0, 1200);
+                    rawBody.className = 'ai-result-reason ai-raw-response';
+                    rawBody.textContent = rawText;
 
                     rawCard.appendChild(rawTitle);
                     rawCard.appendChild(rawBody);
@@ -1763,6 +1770,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 meta.textContent = [
                     candidate.groupType ? '类群：' + labelGroupType(candidate.groupType) : '',
                     candidate.taxonomy ? '分类：' + candidate.taxonomy : '',
+                    candidate.iucn ? 'IUCN：' + candidate.iucn : '',
                     candidate.confidence ? '置信度：' + candidate.confidence : ''
                 ].filter(Boolean).join(' · ');
 
@@ -1805,6 +1813,9 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             if (candidate.groupType && candidate.groupType !== 'other') form.elements.groupType.value = candidate.groupType;
             if (candidate.taxonomy && hasSelectOption(form.elements.taxonomy, candidate.taxonomy)) {
                 form.elements.taxonomy.value = candidate.taxonomy;
+            }
+            if (candidate.iucn && hasSelectOption(form.elements.iucn, candidate.iucn)) {
+                form.elements.iucn.value = candidate.iucn;
             }
             if (candidate.reason && !form.elements.note.value.trim()) {
                 form.elements.note.value = 'AI 识别参考：' + candidate.reason;
