@@ -1684,6 +1684,13 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             try {
                 var body = new FormData();
                 body.append('image', selectedImages[0].compressedFile);
+                appendIdentifyContext(body, 'location', form.elements.location.value);
+                appendIdentifyContext(body, 'latitude', form.elements.latitude.value);
+                appendIdentifyContext(body, 'longitude', form.elements.longitude.value);
+                appendIdentifyContext(body, 'shotDate', form.elements.shotDate.value);
+                appendIdentifyContext(body, 'groupType', form.elements.groupType.value);
+                appendIdentifyContext(body, 'taxonomy', form.elements.taxonomy.value);
+                appendIdentifyContext(body, 'note', form.elements.note.value);
 
                 var response = await fetch(API_BASE_URL + '/identify', {
                     method: 'POST',
@@ -1703,6 +1710,13 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             } finally {
                 identifyButton.textContent = 'AI 识别第一张图';
                 updateIdentifyState();
+            }
+        }
+
+        function appendIdentifyContext(body, key, value) {
+            var text = String(value || '').trim();
+            if (text) {
+                body.append(key, text);
             }
         }
 
