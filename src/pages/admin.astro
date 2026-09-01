@@ -1703,7 +1703,10 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 }
 
                 var data = await response.json();
-                renderIdentifyResults(Array.isArray(data.candidates) ? data.candidates : [], data.rawText || '');
+                renderIdentifyResults(Array.isArray(data.candidates) ? data.candidates : [], data.rawText || '', {
+                    provider: data.provider || '',
+                    model: data.model || ''
+                });
             } catch (error) {
                 identifyResults.innerHTML = '';
                 showStatus(error.message || 'AI 识别失败，请稍后再试。', 'error');
@@ -1720,8 +1723,9 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             }
         }
 
-        function renderIdentifyResults(candidates, rawText) {
+        function renderIdentifyResults(candidates, rawText, source) {
             identifyResults.innerHTML = '';
+            renderIdentifySource(source);
 
             if (!candidates.length) {
                 identifyResults.appendChild(createEmptyState('AI 暂时没有给出可靠候选结果。'));
@@ -1781,6 +1785,17 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             });
 
             showStatus('AI 已给出候选结果，请确认后再保存。', 'success');
+        }
+
+        function renderIdentifySource(source) {
+            if (!source || (!source.provider && !source.model)) {
+                return;
+            }
+
+            var sourceLine = document.createElement('p');
+            sourceLine.className = 'ai-result-meta';
+            sourceLine.textContent = 'AI 来源：' + [source.provider, source.model].filter(Boolean).join(' / ');
+            identifyResults.appendChild(sourceLine);
         }
 
         function applyIdentifyCandidate(candidate) {
