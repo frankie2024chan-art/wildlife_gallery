@@ -1696,7 +1696,7 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
                 }
 
                 var data = await response.json();
-                renderIdentifyResults(Array.isArray(data.candidates) ? data.candidates : []);
+                renderIdentifyResults(Array.isArray(data.candidates) ? data.candidates : [], data.rawText || '');
             } catch (error) {
                 identifyResults.innerHTML = '';
                 showStatus(error.message || 'AI 识别失败，请稍后再试。', 'error');
@@ -1706,11 +1706,27 @@ const API_BASE_URL = "https://api.frankiewildlife.bid";
             }
         }
 
-        function renderIdentifyResults(candidates) {
+        function renderIdentifyResults(candidates, rawText) {
             identifyResults.innerHTML = '';
 
             if (!candidates.length) {
                 identifyResults.appendChild(createEmptyState('AI 暂时没有给出可靠候选结果。'));
+                if (rawText) {
+                    var rawCard = document.createElement('div');
+                    rawCard.className = 'ai-result-card';
+
+                    var rawTitle = document.createElement('div');
+                    rawTitle.className = 'ai-result-name';
+                    rawTitle.textContent = 'AI 原始回答';
+
+                    var rawBody = document.createElement('p');
+                    rawBody.className = 'ai-result-reason';
+                    rawBody.textContent = rawText.slice(0, 1200);
+
+                    rawCard.appendChild(rawTitle);
+                    rawCard.appendChild(rawBody);
+                    identifyResults.appendChild(rawCard);
+                }
                 showStatus('AI 没有识别出可靠结果，你可以手动填写。', '');
                 return;
             }
